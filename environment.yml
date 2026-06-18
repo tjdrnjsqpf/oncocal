@@ -1,0 +1,27 @@
+name: mutfunc
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  - pandas
+  - scipy
+  - scikit-learn
+  - xgboost
+  - lightgbm
+  - matplotlib
+  - seaborn
+  - statsmodels
+  - jupyterlab
+  - pyarrow            # parquet
+  - tqdm
+  - pyyaml
+  - requests
+  # 생물정보 유틸
+  - pysam              # VCF/BAM
+  - bioconda::pybigwig
+  - pip:
+      - shap           # 모델 해석
+      - myvariant      # variant annotation API

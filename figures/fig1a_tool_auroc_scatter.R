@@ -1,0 +1,28 @@
+# Fig 1a — Per-tool AUROC: oncogene (GOF) vs TSG (LOF)
+# Input: tables/tool_performance.tsv   Output: fig1a_tool_auroc_scatter.{pdf,png}
+# 메시지: 49개 중 42개 도구가 대각선 아래(GOF AUROC < TSG AUROC).
+suppressPackageStartupMessages({library(tidyverse)})
+
+tp <- read.delim("tables/tool_performance.tsv", check.names = FALSE)
+wide <- tp %>%
+  filter(group %in% c("oncogene","TSG")) %>%
+  select(tool, group, AUROC) %>%
+  pivot_wider(names_from = group, values_from = AUROC) %>%
+  mutate(below = oncogene < TSG)
+
+n_below <- sum(wide$below, na.rm = TRUE); n_tot <- sum(!is.na(wide$below))
+
+p <- ggplot(wide, aes(TSG, oncogene, color = below)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey50") +
+  geom_point(size = 2, alpha = 0.8) +
+  scale_color_manual(values = c(`TRUE` = "#C0392B", `FALSE` = "#2C3E50"),
+                     labels = c(`TRUE` = "GOF under-scored", `FALSE` = "not under-scored"),
+                     name = NULL) +
+  coord_equal(xlim = c(0.5, 0.92), ylim = c(0.5, 0.92)) +
+  labs(x = "AUROC, TSG (loss-of-function)",
+       y = "AUROC, oncogene (gain-of-function)",
+       title = sprintf("%d of %d tools score GOF drivers worse than LOF", n_below, n_tot)) +
+  theme_classic(base_size = 12) + theme(legend.position = c(0.78, 0.12))
+
+ggsave("figures_R/fig1a_tool_auroc_scatter.pdf", p, width = 5, height = 5)
+ggsave("figures_R/fig1a_tool_auroc_scatter.png", p, width = 5, height = 5, dpi = 300)
