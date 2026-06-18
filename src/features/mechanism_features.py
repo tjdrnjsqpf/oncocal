@@ -1,12 +1,12 @@
-"""기전 시그니처 feature — 서열 기반 생화학 변화 (구조 불요, Phase 2 차별점 1단계).
+"""Mechanism signature features — sequence-based biochemical changes (no structure needed, step 1 of the Phase 2 differentiator).
 
-가설(research_plan §2, Part B 잔여 클래스):
-  - germline 도구는 '보존+구조 파괴'를 봄 → **온건한(낮은 ΔΔG 경향) 활성화 치환**을 놓침.
-    서열 수준 proxy: 작은 소수성/부피/극성 변화 = 비파괴적 = GOF 신호일 수 있음 (예: JAK2 V617F, V→F).
-  - **neomorphic cysteine 생성** = 비정상 disulfide 이량체화(예: FGFR3 S249C/Y373C) → cysteine-gain 플래그.
-  - proline 도입(구조 꺾임), glycine 관여(유연성), 전하 역전 등.
+Hypothesis (research_plan §2, Part B residual class):
+  - germline tools look at 'conservation + structural disruption' → they miss **mild (low-ΔΔG-tendency) activating substitutions**.
+    Sequence-level proxy: small hydrophobicity/volume/polarity change = non-disruptive = possible GOF signal (e.g. JAK2 V617F, V→F).
+  - **neomorphic cysteine creation** = aberrant disulfide dimerization (e.g. FGFR3 S249C/Y373C) → cysteine-gain flag.
+  - proline introduction (structural kink), glycine involvement (flexibility), charge reversal, etc.
 
-구조 기반(ΔΔG·activation domain·3D clustering)은 다음 단계(AlphaFold). 여기선 ref/alt AA만 사용.
+Structure-based features (ΔΔG, activation domain, 3D clustering) are the next step (AlphaFold). Here we use only ref/alt AA.
 """
 from __future__ import annotations
 import os
@@ -25,11 +25,11 @@ except ImportError:
 HYDRO = {"A": 1.8, "R": -4.5, "N": -3.5, "D": -3.5, "C": 2.5, "Q": -3.5, "E": -3.5,
          "G": -0.4, "H": -3.2, "I": 4.5, "L": 3.8, "K": -3.9, "M": 1.9, "F": 2.8,
          "P": -1.6, "S": -0.8, "T": -0.7, "W": -0.9, "Y": -1.3, "V": 4.2}
-# 잔기 부피 (Å^3)
+# Residue volume (Å^3)
 VOL = {"A": 88.6, "R": 173.4, "N": 114.1, "D": 111.1, "C": 108.5, "Q": 143.8, "E": 138.4,
        "G": 60.1, "H": 153.2, "I": 166.7, "L": 166.7, "K": 168.6, "M": 162.9, "F": 189.9,
        "P": 112.7, "S": 89.0, "T": 116.1, "W": 227.8, "Y": 193.6, "V": 140.0}
-# 전하 (생리적 pH)
+# Charge (physiological pH)
 CHARGE = {"D": -1, "E": -1, "K": 1, "R": 1, "H": 0.1}
 # Grantham polarity
 POLAR = {"A": 8.1, "R": 10.5, "N": 11.6, "D": 13.0, "C": 5.5, "Q": 10.5, "E": 12.3,
@@ -57,7 +57,7 @@ def features_for(ref: str, alt: str) -> dict:
         "mech_glycine_involved": int(ref == "G" or alt == "G"),
         "mech_to_aromatic": int(alt in "FWY"),
     }
-    # Grantham 거리 (조성 무시한 polarity+volume 근사)
+    # Grantham distance (polarity+volume approximation, ignoring composition)
     d["mech_grantham_like"] = float(np.sqrt(
         0.1018 * (POLAR[alt] - POLAR[ref]) ** 2 + 0.000399 * (VOL[alt] - VOL[ref]) ** 2))
     return d
@@ -67,7 +67,7 @@ MECH_COLS = list(features_for("V", "F").keys())
 
 
 def add_mechanism_features(df: pd.DataFrame) -> pd.DataFrame:
-    """df에 mech_* 컬럼 추가. protein_change(예 'V600E') 또는 ref_aa/alt_aa 사용."""
+    """Add mech_* columns to df. Uses protein_change (e.g. 'V600E') or ref_aa/alt_aa."""
     recs = []
     for pc in df["protein_change"].astype(str):
         p = parse_protein_change(pc)

@@ -1,16 +1,16 @@
-"""COSMIC Mutant 파일 -> 변이별 recurrence (distinct sample 수), 패널 유전자 한정.
+"""COSMIC Mutant file -> per-variant recurrence (distinct sample count), restricted to panel genes.
 
-설계 근거 (phase1_execution.md B-5, §6 circularity):
-  - recurrence = 같은 protein change(missense)를 가진 **distinct COSMIC_SAMPLE_ID 수**.
-  - ⚠️ ascertainment bias: MutantCensus 는 타깃 패널 데이터 포함 → 알려진 hotspot 과대.
-    **GenomeScreensMutant**(genome/exome-wide, unbiased)가 recurrence FEATURE 로 더 정직.
-    → --source 로 선택. 기본은 genome screens.
-  - ⚠️ circularity: recurrence 를 label(positive 정의)과 feature 양쪽에 쓰면 순환.
-    이 산출물은 **feature 후보**로만 쓰고, label(hotspot/CIViC)과 분리. ablation 필수.
-  - 메모리 관리: CGC 패널 유전자(768)로 필터 후 집계.
+Design rationale (phase1_execution.md B-5, §6 circularity):
+  - recurrence = **number of distinct COSMIC_SAMPLE_IDs** with the same protein change (missense).
+  - ⚠️ ascertainment bias: MutantCensus includes targeted panel data → known hotspots are overrepresented.
+    **GenomeScreensMutant** (genome/exome-wide, unbiased) is more honest as a recurrence FEATURE.
+    → choose via --source. Default is genome screens.
+  - ⚠️ circularity: using recurrence both as label (positive definition) and as feature is circular.
+    Use this output only as a **feature candidate**, separate from labels (hotspot/CIViC). Ablation required.
+  - Memory management: filter to CGC panel genes (768), then aggregate.
 
-출력: data/interim/cosmic_recurrence__<source>.tsv  (pkey 단위)
-사용: python -m src.data.cosmic_recurrence --source genomescreens
+Output: data/interim/cosmic_recurrence__<source>.tsv  (per pkey)
+Usage: python -m src.data.cosmic_recurrence --source genomescreens
 """
 from __future__ import annotations
 import argparse
@@ -40,7 +40,7 @@ def _repo_root() -> str:
 
 
 def _ensure_extracted(cosmic_dir: str, fname: str) -> str:
-    """tar 안에 있으면 .tsv.gz 추출. 이미 있으면 그대로."""
+    """If inside the tar, extract the .tsv.gz. If it already exists, keep it."""
     gz = os.path.join(cosmic_dir, fname)
     if os.path.exists(gz):
         return gz
@@ -50,16 +50,16 @@ def _ensure_extracted(cosmic_dir: str, fname: str) -> str:
         with tarfile.open(tar) as t:
             t.extract(fname, path=cosmic_dir)
         return gz
-    raise SystemExit("COSMIC 파일 없음: %s (또는 %s)" % (gz, tar))
+    raise SystemExit("COSMIC file not found: %s (or %s)" % (gz, tar))
 
 
 def build_recurrence(gz_path: str, panel_genes: set[str], progress_every: int = 2_000_000):
-    """⚠️ transcript isoform 번호 문제(예: GenomeScreens가 BRAF V600E를 V640E로 표기) 회피를 위해
-    **GRCh38 유전체 좌표(chr,pos,ref,alt) 단위**로 distinct sample 카운트. AM(GRCh38)과 좌표로 join.
-    chr 은 'chr' 접두어 제거해 정규화(AM='chr7' vs COSMIC='7')."""
+    """⚠️ To avoid the transcript isoform numbering issue (e.g. GenomeScreens labels BRAF V600E as V640E),
+    count distinct samples **per GRCh38 genome coordinate (chr,pos,ref,alt)**. Join with AM (GRCh38) by coordinate.
+    Normalize chr by stripping the 'chr' prefix (AM='chr7' vs COSMIC='7')."""
     samples = defaultdict(set)     # gkey(chr,pos,ref,alt) -> set(sample_id)
-    meta = {}                       # gkey -> (gene, 대표 protein_change)
-    pchg_set = defaultdict(set)     # gkey -> 관측된 protein_change 들(정합성 점검)
+    meta = {}                       # gkey -> (gene, representative protein_change)
+    pchg_set = defaultdict(set)     # gkey -> observed protein_changes (consistency check)
     n = n_kept = 0
     with gzip.open(gz_path, "rt") as f:
         r = csv.DictReader(f, delimiter="\t")
@@ -78,7 +78,7 @@ def build_recurrence(gz_path: str, panel_genes: set[str], progress_every: int = 
             wt = (row.get("GENOMIC_WT_ALLELE", "") or "").strip()
             mut = (row.get("GENOMIC_MUT_ALLELE", "") or "").strip()
             if not (ch and pos and wt and mut) or len(wt) != 1 or len(mut) != 1:
-                continue  # SNV 만 (missense)
+                continue  # SNV only (missense)
             gkey = (ch, pos, wt, mut)
             sid = row.get("COSMIC_SAMPLE_ID") or row.get("SAMPLE_NAME") or ""
             samples[gkey].add(sid)
@@ -93,7 +93,7 @@ def build_recurrence(gz_path: str, panel_genes: set[str], progress_every: int = 
         rows.append({
             "grch38_chr": ch, "grch38_pos": int(ps), "grch38_ref": wt, "grch38_alt": mut,
             "gene": gene, "protein_change_repr": pchg,
-            "n_protein_annotations": len(pchg_set[gkey]),  # >1 이면 transcript별 번호 상이
+            "n_protein_annotations": len(pchg_set[gkey]),  # >1 means transcript-specific numbering differs
             "cosmic_sample_count": len(sset),
         })
     df = pd.DataFrame(rows).sort_values("cosmic_sample_count", ascending=False).reset_index(drop=True)
@@ -122,7 +122,7 @@ def main():
     print("[cosmic_recurrence] scanned %d rows, kept %d sample-hits" % (n, n_kept))
     print("  unique GRCh38 missense variants (panel): %d" % len(df))
     multi = int((df["n_protein_annotations"] > 1).sum())
-    print("  유전체변이 1개가 transcript별로 다른 protein번호(>1): %d (좌표 키라 무영향)" % multi)
+    print("  single genomic variant with transcript-varying protein numbers(>1): %d (no effect since key is coordinate)" % multi)
     print("  top recurrence:")
     print(df.head(10)[["gene", "protein_change_repr", "grch38_chr", "grch38_pos",
                        "cosmic_sample_count"]].to_string(index=False))

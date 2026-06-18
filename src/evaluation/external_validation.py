@@ -1,13 +1,13 @@
-"""외부검증 — 독립 DMS(ProteinGym) 기능 데이터로 모델·도구 평가 (reviewer 최대 구멍 메우기).
+"""External validation — evaluate the model & tools on independent DMS (ProteinGym) functional data (filling the biggest reviewer gap).
 
-방법: 우리 라벨로 전체 모델(tools+mech+struct) 학습 → ProteinGym DMS 변이에 예측 →
-  실험 기능점수(DMS_score)와의 상관(Spearman)을 AlphaMissense·best tool과 비교.
-  - DMS는 우리 학습 라벨과 독립(다른 실험 axis).
-  - assay 6종: oncogene(SRC 활성, YAP1) + TSG-LOF(PTEN×2, BRCA1, MSH2).
-  - ⚠️ TSG-LOF assay는 oncogenicity ∝ -fitness → |Spearman|로 비교(부호 보고). SRC=활성 assay(GOF 방향 상이).
-  - 모델은 이 변이/유전자 일부를 학습에서 봤을 수 있음(gene-group 아님) → 도구 대비 '상대' 개선이 핵심.
+Method: train the full model (tools+mech+struct) on our labels → predict on ProteinGym DMS variants →
+  compare correlation (Spearman) with the experimental fitness score (DMS_score) against AlphaMissense and the best tool.
+  - DMS is independent of our training labels (a different experimental axis).
+  - 6 assays: oncogene (SRC activity, YAP1) + TSG-LOF (PTEN×2, BRCA1, MSH2).
+  - ⚠️ For TSG-LOF assays, oncogenicity ∝ -fitness → compare by |Spearman| (report the sign). SRC=activity assay (different GOF direction).
+  - The model may have seen some of these variants/genes during training (not gene-group) → the 'relative' improvement over tools is the key point.
 
-사용: python -m src.evaluation.external_validation
+Usage: python -m src.evaluation.external_validation
 """
 from __future__ import annotations
 import glob
@@ -40,7 +40,7 @@ def assay_gene(fn):
 
 
 def canonical_seq(uniprot):
-    """AF pdb에서 canonical 1-letter 서열(위치=resnum)."""
+    """Canonical 1-letter sequence from the AF pdb (position=resnum)."""
     p = glob.glob(os.path.join(ROOT, "data", "external", "alphafold", "AF-%s-F1-model_v*.pdb" % uniprot))
     if not p:
         return None
@@ -54,8 +54,8 @@ def canonical_seq(uniprot):
 
 
 def assay_offset(target_seq, canon):
-    """assay construct(target_seq)가 canonical의 어디서 시작하는지 → local pos에 더할 offset.
-    full-length(0)이거나 fragment를 seed로 substring 탐색. 실패 시 None."""
+    """Where the assay construct (target_seq) starts within canonical → offset to add to the local pos.
+    Full-length (0), or substring search using a fragment as seed. Returns None on failure."""
     if not target_seq or not canon:
         return 0
     if target_seq[:40] in canon:
@@ -71,7 +71,7 @@ def main():
     tool_feats = [c for c in df.columns if c.startswith("dbnsfp_") and c.endswith("_rankscore")]
     feats = tool_feats + MECH_COLS + STRUCT_COLS
 
-    # 전체 모델 학습(라벨된 부분)
+    # Train the full model (labeled portion)
     lab = df[df.y.notna()]
     m = lgb.LGBMClassifier(**PARAMS).fit(lab[feats].astype(float).values, lab.y.astype(int).values)
     df["model_pred"] = m.predict_proba(df[feats].astype(float).values)[:, 1]
@@ -79,7 +79,7 @@ def main():
     AM = "dbnsfp_AlphaMissense_rankscore"
     REVEL = "dbnsfp_REVEL_rankscore"
 
-    # 참조(target_seq) + gene->uniprot (construct 번호 offset 보정용)
+    # Reference (target_seq) + gene->uniprot (for construct numbering offset correction)
     ref = pd.read_csv(os.path.join(ROOT, "data", "external", "proteingym", "DMS_substitutions.csv"))
     id2seq = dict(zip(ref.DMS_id, ref.target_seq))
     gu = pd.read_csv(os.path.join(ROOT, "data", "interim", "gene_uniprot.tsv"), sep="\t")
@@ -92,14 +92,14 @@ def main():
         canon = canonical_seq(g2u.get(gene, ""))
         off = assay_offset(id2seq.get(dms_id), canon)
         dms = pd.read_csv(fn)
-        # 단일 변이만 + construct->canonical 위치 보정 + ref AA 정합 검증
+        # Single variants only + construct->canonical position correction + ref AA consistency check
         pk, keep = [], []
         for mut in dms["mutant"].astype(str):
             pc = parse_protein_change(mut)
             ok = False
             if pc and pc[0] != pc[2] and off is not None and canon:
                 cpos = pc[1] + off
-                if 1 <= cpos <= len(canon) and canon[cpos - 1] == pc[0]:  # ref AA가 canonical과 일치
+                if 1 <= cpos <= len(canon) and canon[cpos - 1] == pc[0]:  # ref AA matches canonical
                     pk.append(protein_key(gene, pc[0], cpos, pc[2])); ok = True
             if not ok:
                 pk.append(None)
@@ -108,7 +108,7 @@ def main():
         merged = dms.merge(feat_index[["model_pred", AM, REVEL]], left_on="pkey", right_index=True, how="inner")
         if len(merged) < 30:
             rows.append({"assay": os.path.basename(fn).replace(".csv", ""), "gene": gene,
-                         "n_dms": len(dms), "n_covered": len(merged), "note": "coverage 부족"})
+                         "n_dms": len(dms), "n_covered": len(merged), "note": "insufficient coverage"})
             continue
         s_model = spearmanr(merged.model_pred, merged.DMS_score, nan_policy="omit").correlation
         s_am = spearmanr(merged[AM], merged.DMS_score, nan_policy="omit").correlation
@@ -123,10 +123,10 @@ def main():
 
     ok = res.dropna(subset=["spearman_MODEL"]) if "spearman_MODEL" in res else res
     if "spearman_MODEL" in res.columns and len(ok):
-        print("\n|Spearman| 평균: MODEL=%.3f, AlphaMissense=%.3f, REVEL=%.3f"
+        print("\n|Spearman| mean: MODEL=%.3f, AlphaMissense=%.3f, REVEL=%.3f"
               % (ok.spearman_MODEL.abs().mean(), ok.spearman_AlphaMissense.abs().mean(),
                  ok.spearman_REVEL.abs().mean()))
-        print("MODEL이 |Spearman| 더 높은 assay: %d/%d"
+        print("Assays where MODEL has higher |Spearman|: %d/%d"
               % (int((ok.spearman_MODEL.abs() > ok.spearman_AlphaMissense.abs()).sum()), len(ok)))
     print("\n[done] -> results/tables/external_validation_dms.tsv")
 

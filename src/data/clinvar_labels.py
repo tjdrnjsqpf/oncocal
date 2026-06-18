@@ -1,19 +1,19 @@
-"""ClinVar variant_summary -> benign negative 라벨 (+ 보조 oncogenicity 신호).
+"""ClinVar variant_summary -> benign negative labels (+ auxiliary oncogenicity signal).
 
-설계 근거 (phase1_execution.md C):
-  - negative = ClinVar Benign / Likely benign (germline 임상 분류) — gnomAD common 과 함께 negative 정의.
-  - GRCh38 행만, Type='single nucleotide variant', missense(Name 의 p.change)만.
-  - ⚠️ leakage 주의: 많은 germline 도구(REVEL 등)가 ClinVar benign 으로 학습됨 →
-    이 negative 는 그 도구들과 변이를 공유할 수 있다. 평가 split(gene/position) + ablation 으로 대응.
-  - 보너스: variant_summary 에 'Oncogenicity' 컬럼(체세포 oncogenicity 분류)이 있어
-    'Oncogenic/Likely oncogenic' 를 보조 positive 신호, 'Benign' 을 보조 negative 신호로 보존.
-    (단 1차 positive 백본은 CIViC+hotspots+COSMIC; ClinVar oncogenicity 는 cross-check 용.)
+Design rationale (phase1_execution.md C):
+  - negative = ClinVar Benign / Likely benign (germline clinical classification) — defines negatives together with gnomAD common.
+  - GRCh38 rows only, Type='single nucleotide variant', missense only (p.change in Name).
+  - ⚠️ leakage caution: many germline tools (REVEL etc.) are trained on ClinVar benign →
+    these negatives may share variants with those tools. Address via evaluation split (gene/position) + ablation.
+  - Bonus: variant_summary has an 'Oncogenicity' column (somatic oncogenicity classification), so
+    keep 'Oncogenic/Likely oncogenic' as an auxiliary positive signal and 'Benign' as an auxiliary negative signal.
+    (However the primary positive backbone is CIViC+hotspots+COSMIC; ClinVar oncogenicity is for cross-check.)
 
-Name 예: 'NM_000355.4(TCN2):c.776G>C (p.Arg259Pro)'  -> 3-letter p.change.
-'p.Asn378=' 같은 synonymous 는 parse 실패로 자동 제외(alt AA 없음).
+Name example: 'NM_000355.4(TCN2):c.776G>C (p.Arg259Pro)'  -> 3-letter p.change.
+Synonymous like 'p.Asn378=' is auto-excluded by parse failure (no alt AA).
 
-출력: data/interim/clinvar_labels.tsv (pkey 단위)
-사용: python -m src.data.clinvar_labels
+Output: data/interim/clinvar_labels.tsv (per pkey)
+Usage: python -m src.data.clinvar_labels
 """
 from __future__ import annotations
 import argparse
@@ -30,8 +30,8 @@ except ImportError:
     sys.path.insert(0, os.path.dirname(__file__))
     from variant_keys import parse_protein_change, is_missense_change, protein_key
 
-BENIGN_TOKENS = ("Benign", "Likely benign")  # ClinicalSignificance 부분일치
-# review status -> star (대표적인 것만; 그 외는 0성으로 보수적 처리)
+BENIGN_TOKENS = ("Benign", "Likely benign")  # ClinicalSignificance partial match
+# review status -> star (only the representative ones; others conservatively treated as 0 star)
 STAR = {
     "practice guideline": 4,
     "reviewed by expert panel": 3,
@@ -49,7 +49,7 @@ def _repo_root() -> str:
 def _is_benign(cs: str) -> bool:
     if not cs:
         return False
-    # 'Pathogenic' 류가 섞인 conflicting 은 제외, benign 토큰만 포함되어야 함
+    # Exclude conflicting cases mixed with 'Pathogenic'; only benign tokens should be present
     low = cs.lower()
     if "pathogenic" in low or "uncertain" in low or "oncogenic" in low:
         return False
@@ -78,7 +78,7 @@ def build_clinvar_labels(path: str, min_star: int = 1) -> pd.DataFrame:
                 continue
             pkey = protein_key(gene, ref, pos, alt)
 
-            # 보조 oncogenicity 신호 보존
+            # Keep auxiliary oncogenicity signal
             onc = (row.get("Oncogenicity") or "").strip()
             if onc and onc not in ("-", ""):
                 onc_signal[pkey].add(onc)
@@ -98,7 +98,7 @@ def build_clinvar_labels(path: str, min_star: int = 1) -> pd.DataFrame:
                 }
     df = pd.DataFrame(agg.values())
     if df.empty:
-        raise SystemExit("ClinVar: benign missense 0건 — 입력/필터 확인.")
+        raise SystemExit("ClinVar: 0 benign missense — check input/filters.")
     df["clinvar_oncogenicity"] = df["pkey"].map(
         lambda k: "|".join(sorted(onc_signal.get(k, set()))) or "")
     df["clinvar_benign"] = df["clinvar_review_star"] >= min_star
@@ -111,7 +111,7 @@ def main():
     root = _repo_root()
     ap.add_argument("--clinvar", default=os.path.join(root, "data", "external", "clinvar", "variant_summary.txt.gz"))
     ap.add_argument("--out", default=os.path.join(root, "data", "interim", "clinvar_labels.tsv"))
-    ap.add_argument("--min-star", type=int, default=1, help="clinvar_benign=True 로 칠 최소 review star")
+    ap.add_argument("--min-star", type=int, default=1, help="minimum review star to count as clinvar_benign=True")
     args = ap.parse_args()
 
     df = build_clinvar_labels(args.clinvar, args.min_star)

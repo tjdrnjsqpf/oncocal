@@ -1,15 +1,15 @@
 # Fig 5 — External validation on independent DMS (ProteinGym v1.3)
 # Input: tables/external_validation_dms.tsv  Output: fig6_dms_spearman.{pdf,png}
-# 메시지: 모델 |Spearman| 0.492 ~= AlphaMissense 0.502 > REVEL 0.426; 방향 정확(일반화).
+# Message: model |Spearman| 0.492 ~= AlphaMissense 0.502 > REVEL 0.426; direction correct (generalises).
 suppressPackageStartupMessages({library(tidyverse)})
 
-# ProteinGym assay ID -> 깔끔한 라벨 "GENE (Author Year)"
+# ProteinGym assay ID -> clean label "GENE (Author Year)"
 clean_label <- function(assay) {
   g  <- sub("_HUMAN.*", "", assay)
   yr <- str_extract(assay, "(19|20)[0-9]{2}")
   au <- str_match(assay, "_HUMAN_([A-Za-z]+)")[, 2]
   lab <- paste0(g, " (", au, " ", yr, ")")
-  ifelse(grepl("_CD_", assay), sub("\\)$", ", CD)", lab), lab)  # SRC Ahler 2019 중복 구분
+  ifelse(grepl("_CD_", assay), sub("\\)$", ", CD)", lab), lab)  # disambiguate the duplicate SRC Ahler 2019
 }
 
 d <- read.delim("tables/external_validation_dms.tsv", check.names = FALSE) %>%
@@ -23,7 +23,7 @@ d <- read.delim("tables/external_validation_dms.tsv", check.names = FALSE) %>%
                             levels = c("OncoCal","AlphaMissense","REVEL")),
          label = fct_reorder(label, absrho, .fun = max))
 
-# 색: Fig 3과 통일(OncoCal 빨강, AlphaMissense 연파랑), REVEL 회색
+# Colors: consistent with Fig 3 (OncoCal red, AlphaMissense light blue), REVEL grey
 pal <- c("OncoCal" = "#C0392B", "AlphaMissense" = "#5DADE2", "REVEL" = "#7F8C8D")
 
 p <- ggplot(d, aes(absrho, label, fill = predictor)) +

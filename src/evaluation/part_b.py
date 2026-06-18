@@ -1,14 +1,14 @@
-"""Part B — Discordance & 과소평가 분석 (다도구, dbNSFP rankscore).
+"""Part B — Discordance & under-scoring analysis (multi-tool, dbNSFP rankscore).
 
-산출 (results/tables/, results/figures/):
-  B1. 도구별 성능표: oncogenicity AUROC/AUPRC (전체·oncogene·TSG)  -> tool_performance.tsv
-  B2. driver 과소평가율: 고recurrence oncogenic positive 를 각 도구가 rankscore<0.5 로 놓치는 비율
-      (비지도 구조/진화 도구 vs 지도 앙상블 대비)                  -> driver_miss_rate.tsv
-  B3. '왜' 검증: oncogenic positive 중 AlphaMissense 놓침 vs 잡힘의 보존도(GERP/phyloP) 차이
-      (Mann-Whitney) + 보존도가 과소평가를 설명하는 정도            -> 콘솔 + why_conservation.tsv
-  B5. canonical driver 패널 다도구 표                              -> canonical_driver_panel.tsv
+Output (results/tables/, results/figures/):
+  B1. Per-tool performance table: oncogenicity AUROC/AUPRC (all, oncogene, TSG)  -> tool_performance.tsv
+  B2. driver under-scoring rate: fraction of high-recurrence oncogenic positives each tool misses with rankscore<0.5
+      (unsupervised structure/evolution tools vs supervised ensembles)            -> driver_miss_rate.tsv
+  B3. The 'why' test: conservation (GERP/phyloP) difference between AlphaMissense-missed vs caught oncogenic positives
+      (Mann-Whitney) + how much conservation explains under-scoring                -> console + why_conservation.tsv
+  B5. Canonical driver panel multi-tool table                                      -> canonical_driver_panel.tsv
 
-사용: python -m src.evaluation.part_b
+Usage: python -m src.evaluation.part_b
 """
 from __future__ import annotations
 import os
@@ -22,7 +22,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 TBL = os.path.join(ROOT, "results", "tables")
 FIG = os.path.join(ROOT, "results", "figures")
 
-# 도구 분류(거칠지만 유용): 비지도 진화/구조/LM vs 지도 앙상블/supervised
+# Tool classification (coarse but useful): unsupervised evolution/structure/LM vs supervised ensemble/supervised
 UNSUP = ["AlphaMissense", "ESM1b_converted", "popEVE_converted", "PrimateAI", "SIFT_converted",
          "PROVEAN_converted", "GERPpp_RS", "phyloP100way_vertebrate", "phastCons100way_vertebrate"]
 SUP = ["REVEL", "MetaRNN", "MetaSVM", "MetaLR", "VEST4", "M-CAP", "ClinPred", "BayesDel_addAF",
@@ -72,7 +72,7 @@ def b2_driver_miss_rate(df, rec_min=50):
 
 def b3_why_conservation(df):
     pos = df[df.oncogenic_label == "positive"].copy()
-    pos["am_missed"] = pos["am_pathogenicity"] < 0.5  # 브리지 raw 점수 기준
+    pos["am_missed"] = pos["am_pathogenicity"] < 0.5  # based on bridged raw score
     out = {}
     for cons in ["dbnsfp_GERPpp_RS", "dbnsfp_phyloP100way_vertebrate"]:
         miss = pos.loc[pos.am_missed, cons].dropna()
@@ -103,39 +103,39 @@ def main():
     os.makedirs(TBL, exist_ok=True); os.makedirs(FIG, exist_ok=True)
     df = pd.read_parquet(os.path.join(ROOT, "data", "processed", "dataset.parquet"))
     lab = df[df.y.notna()].copy(); lab["y"] = lab["y"].astype(int)
-    print("labeled=%d (pos=%d, neg=%d) | rankscore 도구=%d"
+    print("labeled=%d (pos=%d, neg=%d) | rankscore tools=%d"
           % (len(lab), int(lab.y.sum()), int((lab.y == 0).sum()), len(_rank_cols(lab))))
 
     perf, wide = b1_tool_performance(lab)
     perf.to_csv(os.path.join(TBL, "tool_performance.tsv"), sep="\t", index=False)
-    print("\n[B1] oncogenicity AUROC 상위/하위 (전체):")
+    print("\n[B1] oncogenicity AUROC top/bottom (all):")
     print(wide.head(8).round(3).to_string()); print("  ...")
     print(wide.tail(5).round(3).to_string())
     og = perf[perf.group == "oncogene"].set_index("tool")["AUROC"]
     ts = perf[perf.group == "TSG"].set_index("tool")["AUROC"]
     comp = pd.concat([og.rename("oncogene"), ts.rename("TSG")], axis=1).dropna()
     comp["TSG-oncogene"] = comp["TSG"] - comp["oncogene"]
-    print("\n[B1] oncogene vs TSG AUROC (양수=oncogene를 더 못잡음): 평균 차 %.3f, %d/%d 도구가 oncogene<TSG"
+    print("\n[B1] oncogene vs TSG AUROC (positive=worse at oncogene): mean diff %.3f, %d/%d tools have oncogene<TSG"
           % (comp["TSG-oncogene"].mean(), int((comp["TSG-oncogene"] > 0).sum()), len(comp)))
 
     mr, drivers = b2_driver_miss_rate(df)
     mr.to_csv(os.path.join(TBL, "driver_miss_rate.tsv"), sep="\t", index=False)
-    print("\n[B2] 고recurrence(>=50) driver %d개 — 도구별 과소평가율(rankscore<0.5):" % len(drivers))
-    print("  과소평가 최다 5:"); print(mr.head(5)[["tool", "miss_rate(<0.5)", "type"]].to_string(index=False))
-    print("  과소평가 최소 5:"); print(mr.tail(5)[["tool", "miss_rate(<0.5)", "type"]].to_string(index=False))
+    print("\n[B2] %d high-recurrence(>=50) drivers — per-tool under-scoring rate(rankscore<0.5):" % len(drivers))
+    print("  top 5 under-scoring:"); print(mr.head(5)[["tool", "miss_rate(<0.5)", "type"]].to_string(index=False))
+    print("  bottom 5 under-scoring:"); print(mr.tail(5)[["tool", "miss_rate(<0.5)", "type"]].to_string(index=False))
     for t in ["unsup", "sup"]:
         m = mr[mr.type == t]["miss_rate(<0.5)"]
-        if len(m): print("  평균 과소평가율 [%s]: %.3f (n도구=%d)" % (t, m.mean(), len(m)))
+        if len(m): print("  mean under-scoring rate [%s]: %.3f (n tools=%d)" % (t, m.mean(), len(m)))
 
     why, pos = b3_why_conservation(df)
     why.to_csv(os.path.join(TBL, "why_conservation.tsv"), sep="\t")
-    print("\n[B3] '왜' — AlphaMissense 놓친 vs 잡은 oncogenic positive 의 보존도:")
+    print("\n[B3] the 'why' — conservation of AlphaMissense-missed vs caught oncogenic positives:")
     print(why.round(3).to_string())
 
     panel = b5_canonical_panel(df)
     panel.to_csv(os.path.join(TBL, "canonical_driver_panel.tsv"), sep="\t", index=False)
-    print("\n[B5] canonical driver 패널 -> results/tables/canonical_driver_panel.tsv (%d 변이)" % len(panel))
-    print("[done] 표 4종 -> results/tables/")
+    print("\n[B5] canonical driver panel -> results/tables/canonical_driver_panel.tsv (%d variants)" % len(panel))
+    print("[done] 4 tables -> results/tables/")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# dbNSFP 50GB 이어받기 루프 (연결 끊겨도 size 도달까지 재개)
+# dbNSFP 50GB resume loop (resumes until size is reached, even if the connection drops)
 set -u
 URL="https://dist.genos.us/academic/e55b09/dbNSFP5.3.1a_grch38.gz"
 OUT="data/external/dbnsfp/dbNSFP5.3.1a_grch38.gz"

@@ -1,7 +1,7 @@
-"""Figure 입력 export (새 분석 없음, 기존 파이프라인 재사용).
-  [1] fig2_rsa_input.tsv      — R2 집단(oncogenic positive)의 AM_status + struct_rsa
-  [2] oof_predictions.tsv     — gene-group 5-fold OOF(tools / tools+mech+struct) + AM raw + VARITY_R
-사용: python -m src.models.export_figure_data
+"""Export figure inputs (no new analysis, reuse the existing pipeline).
+  [1] fig2_rsa_input.tsv      — AM_status + struct_rsa of the R2 population (oncogenic positives)
+  [2] oof_predictions.tsv     — gene-group 5-fold OOF (tools / tools+mech+struct) + AM raw + VARITY_R
+Usage: python -m src.models.export_figure_data
 """
 from __future__ import annotations
 import os
@@ -31,8 +31,8 @@ def main():
     mm = rsa.loc[rsa.AM_status == "AM missed", "struct_rsa"].dropna()
     cc = rsa.loc[rsa.AM_status == "AM caught", "struct_rsa"].dropna()
     p = mannwhitneyu(mm, cc).pvalue
-    print("[1] fig2_rsa_input.tsv  (n=%d, struct_rsa 결측 %d)" % (len(rsa), rsa.struct_rsa.isna().sum()))
-    print("    AM missed: n=%d 중앙 RSA=%.3f | AM caught: n=%d 중앙 RSA=%.3f | Mann-Whitney p=%.2e"
+    print("[1] fig2_rsa_input.tsv  (n=%d, struct_rsa missing %d)" % (len(rsa), rsa.struct_rsa.isna().sum()))
+    print("    AM missed: n=%d median RSA=%.3f | AM caught: n=%d median RSA=%.3f | Mann-Whitney p=%.2e"
           % (len(mm), mm.median(), len(cc), cc.median(), p))
 
     # ---------- [2] oof_predictions.tsv ----------
@@ -56,11 +56,11 @@ def main():
     au = lambda s, m: roc_auc_score(y[m], s[m]) if len(np.unique(y[m])) > 1 else float("nan")
     allm = np.ones(len(out), bool)
     print("\n[2] oof_predictions.tsv  (unique pkey n=%d, pos=%d)" % (len(out), int(y.sum())))
-    print("    OOF AUROC(전체): p_model=%.4f, p_model_tools=%.4f, AlphaMissense=%.4f, VARITY_R=%.4f"
+    print("    OOF AUROC(all): p_model=%.4f, p_model_tools=%.4f, AlphaMissense=%.4f, VARITY_R=%.4f"
           % (au(oof_full, allm), au(oof_tools, allm),
              roc_auc_score(y, lab.am_pathogenicity.fillna(0.5)),
              roc_auc_score(y, lab["dbnsfp_VARITY_R_rankscore"].fillna(0.5))))
-    print("    VARITY_R 결측: %d / AM 결측: %d"
+    print("    VARITY_R missing: %d / AM missing: %d"
           % (out.VARITY_R.isna().sum(), out.AlphaMissense.isna().sum()))
     print("\n[done] -> paper_handoff/tables/{fig2_rsa_input,oof_predictions}.tsv")
 

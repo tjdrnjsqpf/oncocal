@@ -1,11 +1,11 @@
 # Fig 4b — ROC & PR curves: model (tool stack) vs AlphaMissense vs VARITY_R
 # Input: tables/oof_predictions.tsv  Output: fig4b_roc_pr_curves.{pdf,png}
-# 메시지: 모델(스택) ~0.92 > best single tool ~0.87. full vs tools-only는 거의 동일(기전/구조 무효).
+# Message: model (stack) ~0.92 > best single tool ~0.87. full vs tools-only nearly identical (mechanism/structure add nothing).
 suppressPackageStartupMessages({library(tidyverse)})
 
 d <- read.delim("tables/oof_predictions.tsv", check.names = FALSE)
 
-# rank 기반 ROC/PR 계산 (sklearn 불필요)
+# rank-based ROC/PR computation (no sklearn needed)
 roc_df <- function(y, s) {
   ok <- !is.na(s); y <- y[ok]; s <- s[ok]
   o <- order(s, decreasing = TRUE); y <- y[o]
@@ -31,8 +31,8 @@ build <- function(fn) imap_dfr(preds, ~ fn(d$y_true, d[[.x]]) %>%
                                         auc = sprintf("%.3f", auroc(d$y_true, d[[.x]]))))
 roc <- build(roc_df); pr <- build(pr_df)
 
-# 공통 팔레트 + AUROC 포함 라벨(두 패널 동일 → 범례 1개로 합쳐짐)
-# 색은 Fig 3(막대)와 통일: AlphaMissense=연파랑, VARITY-R=진파랑
+# Shared palette + labels with AUROC (identical across both panels → merged into one legend)
+# Colors consistent with Fig 3 (bars): AlphaMissense=light blue, VARITY-R=dark blue
 pal <- c("OncoCal (tools)" = "#C0392B", "OncoCal (+mech+struct)" = "#E59866",
          AlphaMissense = "#5DADE2", "VARITY-R" = "#1A5276")
 auc_lab <- setNames(
@@ -56,7 +56,7 @@ pPR <- ggplot(pr, aes(recall, precision, color = predictor)) +
   labs(x = "Recall", y = "Precision", title = "Precision-Recall") +
   theme(plot.margin = margin(6, 6, 6, 14))
 
-# 두 패널 결합 — 범례를 아래로 모아 대각선 가림 없음
+# Combine the two panels — collect the legend at the bottom so the diagonal is not obscured
 if (requireNamespace("patchwork", quietly = TRUE)) {
   p <- patchwork::wrap_plots(pROC, pPR, ncol = 2) +
        patchwork::plot_layout(guides = "collect") &

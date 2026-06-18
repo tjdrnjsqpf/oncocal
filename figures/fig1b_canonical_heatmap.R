@@ -1,13 +1,13 @@
 # Fig 1b — Canonical driver x tool score heatmap, faceted by gene role (GOF vs LOF)
 # Input: tables/canonical_driver_panel.tsv  Output: fig1b_canonical_heatmap.{pdf,png}
-# 메시지: oncogene(GOF) 블록에 저점수(빨강)가 흩어져 있고 TSG/both와 패턴이 대비됨.
+# Message: low scores (red) are scattered across the oncogene (GOF) block, contrasting with the TSG/both pattern.
 suppressPackageStartupMessages({library(tidyverse)})
 
 d0 <- read.delim("tables/canonical_driver_panel.tsv", check.names = FALSE)
-tools <- c("AlphaMissense","REVEL","ESM1b","popEVE","MetaRNN")   # 0-1 rankscore 계열
-TOP_ONCO <- 15   # oncogene는 recurrence 상위 N만 (그림 길이 제한; 전체는 Table 1)
+tools <- c("AlphaMissense","REVEL","ESM1b","popEVE","MetaRNN")   # 0-1 rankscore family
+TOP_ONCO <- 15   # for oncogenes, only the top N by recurrence (figure length limit; full set in Table 1)
 
-# role별 대표 선별: oncogene 상위 N + both 전체 + TSG 전체
+# Select representatives per role: top N oncogenes + all both + all TSG
 d <- bind_rows(
   d0 %>% filter(role_class == "oncogene") %>% slice_max(cosmic_sample_count, n = TOP_ONCO, with_ties = FALSE),
   d0 %>% filter(role_class != "oncogene")
@@ -40,6 +40,6 @@ p <- ggplot(long, aes(tool, label, fill = score)) +
         strip.placement = "outside",
         plot.caption = element_text(size = 7.5, color = "grey40"))
 
-h <- max(5.5, nrow(d) * 0.26 + 1.6)   # 행 수에 맞춘 자동 높이
+h <- max(5.5, nrow(d) * 0.26 + 1.6)   # automatic height based on row count
 ggsave("figures_R/fig1b_canonical_heatmap.pdf", p, width = 7.5, height = h, limitsize = FALSE)
 ggsave("figures_R/fig1b_canonical_heatmap.png", p, width = 7.5, height = h, dpi = 300, limitsize = FALSE)

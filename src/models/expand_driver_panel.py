@@ -1,7 +1,7 @@
-"""canonical_driver_panel.tsv 재구성+확장 (idempotent, 행 추가만, 새 학습 없음).
-oncogene ~30 + TSG ~10 + both(TP53/ESR1 등) 로 확대. 선정 = 라이선스-청정 positive(hotspot|CIViC|COSMIC rec≥10).
-점수는 dataset.parquet/dbNSFP에서 그대로. 없는 값 빈칸. 유전자당 ≤3 변이(다양성). 선정 근거 출력.
-사용: python -m src.models.expand_driver_panel
+"""Rebuild + expand canonical_driver_panel.tsv (idempotent, rows only added, no new training).
+Expand to oncogene ~30 + TSG ~10 + both (TP53/ESR1 etc.). Selection = license-clean positives (hotspot|CIViC|COSMIC rec≥10).
+Scores taken as-is from dataset.parquet/dbNSFP. Missing values left blank. ≤3 variants per gene (diversity). Selection rationale printed.
+Usage: python -m src.models.expand_driver_panel
 """
 from __future__ import annotations
 import os
@@ -18,7 +18,7 @@ COLMAP = {
 }
 OUTCOLS = ["pkey", "role_class", "cosmic_sample_count", "am_pathogenicity"] + list(COLMAP.values())
 
-# 원본 17 (재현용 base) — part_b b5 canonical 패널
+# Original 17 (reproduction base) — part_b b5 canonical panel
 BASE = ["JAK2:p.V617F", "BRAF:p.V600E", "KRAS:p.G12D", "IDH1:p.R132H", "PIK3CA:p.H1047R",
         "EGFR:p.L858R", "NRAS:p.Q61K", "FGFR3:p.S249C", "KIT:p.D816V", "FGFR3:p.Y373C",
         "FLT3:p.D835Y", "GNA11:p.Q209L", "GNAQ:p.Q209L", "MPL:p.W515L", "ERBB2:p.R678Q",
@@ -76,10 +76,10 @@ def main():
     out = out.sort_values(["role_class", "cosmic_sample_count"], ascending=[True, False]).reset_index(drop=True)
     out.to_csv(PANEL, sep="\t", index=False)
 
-    print("총 %d행 (base %d + 확장)" % (len(out), len(BASE)))
-    print("role_class 분포:", out.role_class.value_counts().to_dict())
-    print("  (주의: TP53·ESR1은 CGC에서 role='both' — mutant p53 GOF 때문. heatmap에서 oncogene/both/TSG 3그룹 권장)")
-    print("\n변이 선정 근거(role/recurrence/signal):")
+    print("total %d rows (base %d + expansion)" % (len(out), len(BASE)))
+    print("role_class distribution:", out.role_class.value_counts().to_dict())
+    print("  (note: TP53·ESR1 are role='both' in CGC — due to mutant p53 GOF. 3 groups oncogene/both/TSG recommended in the heatmap)")
+    print("\nVariant selection rationale (role/recurrence/signal):")
     for pk, role, n, hot, civ, src in sorted(why, key=lambda x: (x[1], -x[2])):
         sig = ",".join([s for s, b in [("hotspot", hot), ("CIViC", civ)] if b]) or "rec"
         print("  %-18s %-9s rec=%-6d [%s] (%s)" % (pk, role, n, sig, src))

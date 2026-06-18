@@ -19,9 +19,9 @@ dependencies:
   - tqdm
   - pyyaml
   - requests
-  # 생물정보 유틸
+  # Bioinformatics utilities
   - pysam              # VCF/BAM
   - bioconda::pybigwig
   - pip:
-      - shap           # 모델 해석
+      - shap           # Model interpretation
       - myvariant      # variant annotation API

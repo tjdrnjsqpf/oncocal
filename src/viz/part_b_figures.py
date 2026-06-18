@@ -1,11 +1,11 @@
-"""Part B 핵심 figure 3종 (results/figures/, PNG+SVG+PDF).
+"""Three core Part B figures (results/figures/, PNG+SVG+PDF).
 
-  fig1_conservation_why  — AM-missed vs caught oncogenic driver 의 보존도(phyloP100) = '왜'
-  fig2_tool_miss_rate    — 고recurrence driver 도구별 과소평가율(비지도 vs 지도)
-  fig3_oncogene_vs_tsg   — 도구별 oncogene vs TSG AUROC
+  fig1_conservation_why  — conservation (phyloP100) of AM-missed vs caught oncogenic drivers = the 'why'
+  fig2_tool_miss_rate    — per-tool under-scoring rate of high-recurrence drivers (unsupervised vs supervised)
+  fig3_oncogene_vs_tsg   — per-tool oncogene vs TSG AUROC
 
-논문용이라 figure 텍스트는 영문(한글 글꼴 의존성 제거). 각 그림 PNG/SVG/PDF 저장.
-사용: python -m src.viz.part_b_figures
+For the paper, figure text is in English (removes Korean font dependency). Each figure saved as PNG/SVG/PDF.
+Usage: python -m src.viz.part_b_figures
 """
 from __future__ import annotations
 import os
@@ -23,7 +23,7 @@ FIG = os.path.join(ROOT, "results", "figures")
 plt.rcParams.update({
     "font.family": "DejaVu Sans", "font.size": 11,
     "axes.titlesize": 11, "axes.labelsize": 11,
-    "svg.fonttype": "none", "pdf.fonttype": 42,  # 편집 가능한 텍스트
+    "svg.fonttype": "none", "pdf.fonttype": 42,  # editable text
 })
 
 
@@ -46,7 +46,7 @@ def main():
     import numpy as np
     rng = np.random.default_rng(42)
     fig, ax = plt.subplots(figsize=(5, 4.5))
-    # 개별 데이터 점(jitter strip) 을 box 뒤에 표시
+    # Show individual data points (jitter strip) behind the box
     for xpos, data, c in [(1, caught, "#4C9F70"), (2, miss, "#C0504D")]:
         jx = xpos + rng.normal(0, 0.07, size=len(data))
         ax.scatter(jx, data, s=5, color=c, alpha=0.18, edgecolor="none", zorder=1)

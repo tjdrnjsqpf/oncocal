@@ -1,9 +1,9 @@
-"""Fig 4 재생성 — 동일 파이프라인 10시드(0..9) 일관 산출.
-  [1] model_vs_tools.tsv : predictor별 AUROC/AUPRC mean±sd(전체·oncogene·TSG). 도구 기준선은 sd=0.
-  [2] oof_predictions.tsv: full AUROC 중앙값 대표 시드의 per-variant 예측.
+"""Fig 4 regeneration — consistent output over the same pipeline across 10 seeds (0..9).
+  [1] model_vs_tools.tsv : AUROC/AUPRC mean±sd per predictor (all, oncogene, TSG). Tool baselines have sd=0.
+  [2] oof_predictions.tsv: per-variant predictions from the representative seed (median full AUROC).
   [3] rescue mean±sd + JAK2 V617F.
-gene-group 5-fold OOF, unique pkey, recurrence feature 제외(도구 rankscore+mech+struct만).
-사용: python -m src.models.fig4_multiseed
+gene-group 5-fold OOF, unique pkey, recurrence feature excluded (only tool rankscore+mech+struct).
+Usage: python -m src.models.fig4_multiseed
 """
 from __future__ import annotations
 import os
@@ -59,11 +59,11 @@ def main():
              "oncogene": (lab.role_class == "oncogene").values,
              "TSG": (lab.role_class == "TSG").values}
     Xs = {k: lab[v].astype(float).values for k, v in FSETS.items()}
-    print("labeled=%d pos=%d | feats tools=%d mech=%d full=%d | recurrence 제외 확인=%s"
+    print("labeled=%d pos=%d | feats tools=%d mech=%d full=%d | recurrence excluded check=%s"
           % (len(lab), int(y.sum()), len(tool_feats), len(FSETS["mech"]), len(FSETS["full"]),
              "cosmic_sample_count" not in FSETS["full"]))
 
-    # 시드별 OOF + metric
+    # OOF + metric per seed
     rec = {m: {g: {"AUROC": [], "AUPRC": []} for g in GROUPS} for m in FSETS}
     oofs = {m: {} for m in FSETS}   # model -> seed -> oof array
     for seed in SEEDS:
@@ -75,7 +75,7 @@ def main():
                 rec[m][g]["AUROC"].append(au); rec[m][g]["AUPRC"].append(ap)
         print("  seed %d done (full AUROC_all=%.4f)" % (seed, rec["full"]["all"]["AUROC"][-1]), flush=True)
 
-    # 도구 기준선(시드무관)
+    # Tool baselines (seed-independent)
     base = {"best_tool:VARITY_R": lab["dbnsfp_VARITY_R_rankscore"].values,
             "AlphaMissense": lab["am_pathogenicity"].values}
 
@@ -99,7 +99,7 @@ def main():
         rows.append(r)
     mvt = pd.DataFrame(rows)
 
-    # [2] 대표 시드 = full AUROC_all 중앙값에 가장 가까운 시드
+    # [2] Representative seed = seed closest to the median full AUROC_all
     fa = np.array(rec["full"]["all"]["AUROC"])
     med = np.median(fa)
     rep = SEEDS[int(np.argmin(np.abs(fa - med)))]
@@ -117,28 +117,28 @@ def main():
         mvt.to_csv(os.path.join(d, "model_vs_tools.tsv"), sep="\t", index=False)
         oofp.to_csv(os.path.join(d, "oof_predictions.tsv"), sep="\t", index=False)
 
-    # ---- 콘솔 요약 ----
-    print("\n=== [1] model_vs_tools (10시드 mean±sd, 전체) ===")
+    # ---- Console summary ----
+    print("\n=== [1] model_vs_tools (10 seeds mean±sd, all) ===")
     for _, r in mvt.iterrows():
         print("  %-26s AUROC_all=%.4f±%.4f  AUPRC_all=%.4f±%.4f  AUROC_onc=%.4f  AUROC_TSG=%.4f"
               % (r.predictor, r.AUROC_all_mean, r.AUROC_all_sd, r.AUPRC_all_mean, r.AUPRC_all_sd,
                  r.AUROC_oncogene_mean, r.AUROC_TSG_mean))
 
-    print("\n=== 시드 노이즈 vs feature 효과 ===")
+    print("\n=== seed noise vs feature effect ===")
     dt = np.array(rec["full"]["all"]["AUROC"]) - np.array(rec["tools"]["all"]["AUROC"])
-    print("  full−tools AUROC_all: mean %+.4f, 시드 sd(각 모델)=tools±%.4f/full±%.4f"
+    print("  full−tools AUROC_all: mean %+.4f, seed sd(per model)=tools±%.4f/full±%.4f"
           % (dt.mean(), np.nanstd(rec["tools"]["all"]["AUROC"], ddof=1),
              np.nanstd(rec["full"]["all"]["AUROC"], ddof=1)))
-    print("  → |full−tools| (%.4f) vs 시드 sd 범위 → mech/struct 효과가 노이즈 안인지 판정" % abs(dt.mean()))
+    print("  → |full−tools| (%.4f) vs seed sd range → decide whether the mech/struct effect is within noise" % abs(dt.mean()))
 
-    print("\n=== [2] 대표 시드 = %d (full AUROC_all=%.4f, median=%.4f) ===" % (rep, fa[rep], med))
+    print("\n=== [2] representative seed = %d (full AUROC_all=%.4f, median=%.4f) ===" % (rep, fa[rep], med))
     for m in ["tools", "mech", "full"]:
         au, ap = auc_ap(oofs[m][rep], y, masks["all"])
         print("    p_model_%s: AUROC=%.4f AUPRC=%.4f" % (m, au, ap))
     for nm, sc in base.items():
         au, _ = auc_ap(sc, y, masks["all"]); print("    %s: AUROC=%.4f" % (nm, au))
 
-    # [3] rescue (10시드)
+    # [3] rescue (10 seeds)
     pos = lab.y.values == 1
     am_missed = pos & (lab.am_pathogenicity.values < 0.5)
     nmiss = int(am_missed.sum())
@@ -150,9 +150,9 @@ def main():
         resc_tools.append(100 * np.mean(oofs["tools"][seed][am_missed] >= 0.5))
         if len(jpos):
             jak2.append(oofs["full"][seed][jpos[0]])
-    print("\n=== [3] rescue (10시드 mean±sd) — AM raw<0.5 oncogenic positive n=%d ===" % nmiss)
-    print("  full 구제율: %.1f%% ± %.1f%%" % (np.mean(resc_full), np.std(resc_full, ddof=1)))
-    print("  tools 구제율: %.1f%% ± %.1f%%" % (np.mean(resc_tools), np.std(resc_tools, ddof=1)))
+    print("\n=== [3] rescue (10 seeds mean±sd) — AM raw<0.5 oncogenic positive n=%d ===" % nmiss)
+    print("  full rescue rate: %.1f%% ± %.1f%%" % (np.mean(resc_full), np.std(resc_full, ddof=1)))
+    print("  tools rescue rate: %.1f%% ± %.1f%%" % (np.mean(resc_tools), np.std(resc_tools, ddof=1)))
     if jak2:
         print("  JAK2 V617F p_model_full: %.3f ± %.3f (AM raw=0.334)" % (np.mean(jak2), np.std(jak2, ddof=1)))
     print("\n[done] -> paper_handoff/tables/ + results/tables/ {model_vs_tools, oof_predictions}.tsv")

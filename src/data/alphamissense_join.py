@@ -1,18 +1,18 @@
-"""AlphaMissense hg38 bulk -> 패널 유전자 missense 점수 (변이 universe + flagship 점수).
+"""AlphaMissense hg38 bulk -> panel-gene missense scores (variant universe + flagship scores).
 
-설계 근거 (SOURCES.md, dbNSFP 승인 지연 브리지):
-  - dbNSFP(다도구) 도착 전까지 flagship germline 도구(AlphaMissense)로 score 백본 대체.
+Design rationale (SOURCES.md, bridge during the dbNSFP approval delay):
+  - Until dbNSFP (multi-tool) arrives, substitute the flagship germline tool (AlphaMissense) as the score backbone.
   - AM hg38: CHROM POS REF ALT genome uniprot_id transcript_id protein_variant am_pathogenicity am_class.
-  - 패널(CGC) 의 uniprot 으로 필터 → uniprot->gene 매핑으로 pkey 부여.
-  - 이 산출물이 '패널 내 가능한 모든 missense'의 변이 universe + AM 점수 역할.
-    (build_dataset 에서 이 universe 에 라벨/recurrence 를 left-join.)
+  - Filter by the panel (CGC) uniprot → assign pkey via uniprot->gene mapping.
+  - This output serves as the variant universe of 'all possible missense in the panel' + AM scores.
+    (build_dataset left-joins labels/recurrence onto this universe.)
 
-⚠️ 단백질 번호 정합성: AM 은 UniProt canonical isoform 번호. CIViC/COSMIC 는 대표 transcript 번호.
-   canonical 단백질에선 대개 일치(BRAF V600E 등). 불일치 유전자는 추후 MANE 정렬로 점검.
-⚠️ uniprot 미보유 패널 유전자(~48)는 이 join 에서 빠짐 → 추후 ENSG/transcript 매핑 보강.
+⚠️ Protein numbering consistency: AM uses UniProt canonical isoform numbering. CIViC/COSMIC use representative transcript numbering.
+   For canonical proteins these usually agree (BRAF V600E etc.). Mismatched genes to be checked later via MANE alignment.
+⚠️ Panel genes without uniprot (~48) drop out of this join → supplement later with ENSG/transcript mapping.
 
-출력: data/interim/alphamissense_panel.tsv
-사용: python -m src.data.alphamissense_join
+Output: data/interim/alphamissense_panel.tsv
+Usage: python -m src.data.alphamissense_join
 """
 from __future__ import annotations
 import argparse
@@ -35,8 +35,8 @@ def _repo_root() -> str:
 
 
 def _build_intervals(panel: pd.DataFrame):
-    """패널 유전자 GRCh38 좌표구간 -> chr별 (start정렬) 배열. CGC UniProt 결손(BRAF 등 48개)
-    회피를 위해 uniprot 대신 좌표로 gene 배정."""
+    """Panel-gene GRCh38 coordinate intervals -> per-chr (start-sorted) arrays. To avoid the CGC UniProt
+    gaps (BRAF etc., 48 genes), assign gene by coordinate instead of uniprot."""
     import bisect
     by_chr = {}
     for _, r in panel.iterrows():
@@ -55,12 +55,12 @@ def _build_intervals(panel: pd.DataFrame):
 
 
 def _gene_at(ch, pos, starts, ivs, bisect):
-    """(chr,pos) 를 포함하는 패널 유전자. 구간 비중첩 가정 + 인접 몇 개 확인."""
+    """Panel gene containing (chr,pos). Assumes non-overlapping intervals + checks a few neighbors."""
     arr = starts.get(ch)
     if not arr:
         return None
     i = bisect.bisect_right(arr, pos) - 1
-    for j in range(i, max(-1, i - 3), -1):  # 약간의 중첩 대비 뒤로 몇 개
+    for j in range(i, max(-1, i - 3), -1):  # a few steps back in case of slight overlap
         if j < 0:
             break
         s, e, g = ivs[ch][j]
@@ -102,7 +102,7 @@ def build_am_panel(am_gz: str, panel: pd.DataFrame, progress_every: int = 10_000
     df = pd.DataFrame(rows, columns=[
         "pkey", "gene", "protein_change", "grch38_chr", "grch38_pos",
         "grch38_ref", "grch38_alt", "uniprot", "transcript", "am_pathogenicity", "am_class"])
-    # 동일 (좌표) 다중 transcript -> am_pathogenicity 최댓값 유지(좌표 기준 dedup)
+    # Same (coordinate) across multiple transcripts -> keep the max am_pathogenicity (dedup by coordinate)
     df = (df.sort_values("am_pathogenicity", ascending=False)
             .drop_duplicates(["grch38_chr", "grch38_pos", "grch38_ref", "grch38_alt"])
             .reset_index(drop=True))
@@ -119,7 +119,7 @@ def main():
     args = ap.parse_args()
 
     panel = pd.read_csv(args.panel, sep="\t")
-    print("[am_join] panel genes (좌표구간 배정): %d" % len(panel))
+    print("[am_join] panel genes (assigned by coordinate interval): %d" % len(panel))
 
     df, n = build_am_panel(args.am, panel)
     os.makedirs(os.path.dirname(args.out), exist_ok=True)

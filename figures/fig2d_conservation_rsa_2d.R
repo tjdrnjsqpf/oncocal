@@ -1,5 +1,5 @@
-# Fig 2D (후보) — 보존도 × RSA 2D: 두 직교 축이 함께 AM 실패를 예측
-# Input: fig1_input.tsv (phyloP) + fig2_rsa_input.tsv (RSA), pkey로 join
+# Fig 2D (candidate) — conservation × RSA 2D: two orthogonal axes jointly predict AM failures
+# Input: fig1_input.tsv (phyloP) + fig2_rsa_input.tsv (RSA), joined by pkey
 # Output: fig2d_conservation_rsa_2d.{pdf,png}
 suppressPackageStartupMessages({library(tidyverse)})
 
@@ -10,12 +10,12 @@ d <- inner_join(a, b, by = "pkey") %>%
   mutate(AM_status = factor(AM_status, levels = c("AM missed","AM caught")))
 
 p <- ggplot(d, aes(phyloP100way, struct_rsa, color = AM_status)) +
-  # "저보존+표면노출" 코너 음영
+  # Shade the "low-conservation + surface-exposed" corner
   annotate("rect", xmin = -Inf, xmax = 4, ymin = 0.4, ymax = Inf,
            fill = "#C0392B", alpha = 0.06) +
   geom_point(alpha = 0.4, size = 1.3) +
   scale_color_manual(values = c("AM missed" = "#C0392B","AM caught" = "#1A5276"), name = NULL) +
-  # (79% 주석은 사용자가 직접 추가) — 음영 코너만 시각 가이드로 유지
+  # (the 79% annotation is added manually by the user) — keep only the shaded corner as a visual guide
   labs(x = "phyloP100way conservation", y = "Relative solvent accessibility (RSA)",
        title = "Missed drivers occupy the low-conservation, exposed corner") +
   theme_classic(base_size = 12) + theme(legend.position = "top")

@@ -1,12 +1,12 @@
-"""패널 유전자 -> UniProt 매핑 + AlphaFold 구조(v6 pdb) 다운로드.
+"""Panel gene -> UniProt mapping + AlphaFold structure (v6 pdb) download.
 
-구조 기반 기전 feature(ΔΔG·RSA/burial·pLDDT·3D clustering)의 공통 전제.
-  - gene->uniprot: CGC 패널 uniprot(720) + 결손(BRAF 등 48개)은 dbNSFP gene table(Uniprot_acc)로 보강.
-  - AlphaFold DB 최신 = model_v6. API로 정확 URL 확인 후 pdb 다운로드.
-  - >2700 잔기 단백질은 F1만(조각 분할) — 한계 기록.
+Common prerequisite for structure-based mechanism features (ΔΔG, RSA/burial, pLDDT, 3D clustering).
+  - gene->uniprot: CGC panel uniprot (720) + missing entries (BRAF etc., 48) supplemented via the dbNSFP gene table (Uniprot_acc).
+  - Latest AlphaFold DB = model_v6. Confirm the exact URL via the API, then download the pdb.
+  - For proteins >2700 residues, only F1 (fragment split) — limitation noted.
 
-출력: data/interim/gene_uniprot.tsv, data/external/alphafold/AF-<uniprot>-F1-model_v6.pdb
-사용: python -m src.features.fetch_structures
+Output: data/interim/gene_uniprot.tsv, data/external/alphafold/AF-<uniprot>-F1-model_v6.pdb
+Usage: python -m src.features.fetch_structures
 """
 from __future__ import annotations
 import gzip
@@ -22,7 +22,7 @@ AFDIR = os.path.join(ROOT, "data", "external", "alphafold")
 
 def build_gene_uniprot() -> pd.DataFrame:
     panel = pd.read_csv(os.path.join(ROOT, "data", "interim", "cancer_gene_panel.tsv"), sep="\t")
-    # dbNSFP gene table: Gene_name -> Uniprot_acc (결손 보강)
+    # dbNSFP gene table: Gene_name -> Uniprot_acc (supplement missing entries)
     g2u = {}
     with gzip.open(os.path.join(ROOT, "data", "external", "dbnsfp", "dbNSFP5.3_gene.gz"), "rt",
                    errors="replace") as f:
@@ -72,11 +72,11 @@ def main():
     df = build_gene_uniprot()
     df.to_csv(os.path.join(ROOT, "data", "interim", "gene_uniprot.tsv"), sep="\t", index=False)
     nmap = int((df["uniprot"] != "").sum())
-    print("[struct] gene->uniprot: %d/%d 매핑" % (nmap, len(df)))
+    print("[struct] gene->uniprot: %d/%d mapped" % (nmap, len(df)))
     ok, skip, fail, fails = fetch(df)
     print("[struct] AlphaFold pdb: ok=%d skip=%d fail=%d" % (ok, skip, fail))
     if fails:
-        print("  실패 uniprot(앞 15):", fails[:15])
+        print("  failed uniprot (first 15):", fails[:15])
     print("[struct] -> data/external/alphafold/ , data/interim/gene_uniprot.tsv")
 
 

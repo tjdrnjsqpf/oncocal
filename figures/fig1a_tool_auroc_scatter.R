@@ -1,6 +1,6 @@
 # Fig 1a — Per-tool AUROC: oncogene (GOF) vs TSG (LOF)
 # Input: tables/tool_performance.tsv   Output: fig1a_tool_auroc_scatter.{pdf,png}
-# 메시지: 49개 중 42개 도구가 대각선 아래(GOF AUROC < TSG AUROC).
+# Message: 42 of 49 tools fall below the diagonal (GOF AUROC < TSG AUROC).
 suppressPackageStartupMessages({library(tidyverse)})
 
 tp <- read.delim("tables/tool_performance.tsv", check.names = FALSE)

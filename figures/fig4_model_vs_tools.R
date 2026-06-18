@@ -1,8 +1,8 @@
 # Fig 4a (main) — Model vs predictors: AUROC & AUPRC, mean±sd over 10 seeds, by role
-# Input: tables/model_vs_tools.tsv (mean/sd 컬럼)  Output: fig4_model_vs_tools.{pdf,png}
-# 메시지: 모델(스택) > best 단일 도구(robust); 세 모델 변형은 sd 내 동일(mech/struct 무효).
+# Input: tables/model_vs_tools.tsv (mean/sd columns)  Output: fig4_model_vs_tools.{pdf,png}
+# Message: model (stack) > best single tool (robust); the three model variants are identical within sd (mech/struct add nothing).
 suppressPackageStartupMessages({library(tidyverse)})
-PREV <- 0.188   # 양성 비율 = AUPRC 무작위 기준선
+PREV <- 0.188   # positive prevalence = AUPRC random baseline
 
 disp <- c("MODEL_tools"="OncoCal (tools)", "MODEL_tools+mech"="OncoCal (+mech)",
           "MODEL_tools+mech+struct"="OncoCal (+mech+struct)",
@@ -15,11 +15,11 @@ d <- read.delim("tables/model_vs_tools.tsv", check.names = FALSE) %>%
   pivot_wider(names_from = stat, values_from = value) %>%
   mutate(stratum = recode(stratum, all="All", oncogene="Oncogene (GOF)", TSG="TSG (LOF)"),
          stratum = factor(stratum, levels=c("All","Oncogene (GOF)","TSG (LOF)")),
-         metric = factor(metric, levels = c("AUROC","AUPRC")),   # AUROC 위, AUPRC 아래
+         metric = factor(metric, levels = c("AUROC","AUPRC")),   # AUROC top, AUPRC bottom
          predictor = factor(recode(predictor, !!!disp), levels = names(pal)))
 
-hl <- data.frame(metric = "AUPRC", yint = PREV)   # AUPRC facet에만 기준선
-SHOW_LABELS <- TRUE    # 막대 위 숫자 표시(에러바 위로 배치). 끄려면 FALSE.
+hl <- data.frame(metric = "AUPRC", yint = PREV)   # baseline only on the AUPRC facet
+SHOW_LABELS <- TRUE    # show numbers above the bars (placed above the error bars). Set FALSE to disable.
 
 p <- ggplot(d, aes(predictor, mean, fill = predictor)) +
   geom_col(width = 0.7) +

@@ -1,13 +1,13 @@
-"""Phase 2 — 도구 스택 vs 도구+기전 feature (gene-group CV, best single tool 대비).
+"""Phase 2 — tool stack vs tools+mechanism features (gene-group CV, compared to best single tool).
 
-목표: (RQ3) 도구 스택이 best single tool 대비 개선되는가 + (차별점) **기전 feature를 더하면 더 개선되는가**.
-  - tool feature = dbNSFP 49 *_rankscore (라벨 정의 컬럼 전부 제외 — leakage 차단).
-  - mech feature = 서열 생화학 변화(src/features/mechanism_features): cysteine-gain, 소수성/부피/전하 변화 등.
-  - 학습 단위 = **unique pkey**(코돈 중복 dedup). **gene-group 5-fold OOF**.
-  - 비교: tools-only vs tools+mech vs best single tool. rescue(AM 놓친 양성 구제) 변화. SHAP.
+Goal: (RQ3) does the tool stack improve over the best single tool + (differentiator) **does adding mechanism features improve it further**.
+  - tool feature = dbNSFP 49 *_rankscore (all label-defining columns excluded — block leakage).
+  - mech feature = sequence biochemical changes (src/features/mechanism_features): cysteine-gain, hydrophobicity/volume/charge changes, etc.
+  - training unit = **unique pkey** (dedup codon duplicates). **gene-group 5-fold OOF**.
+  - comparison: tools-only vs tools+mech vs best single tool. rescue (recovery of AM-missed positives) change. SHAP.
 
-산출: results/tables/model_vs_tools.tsv, data/processed/baseline_oof.tsv, results/tables/shap_top.tsv
-사용: python -m src.models.train_baseline
+Output: results/tables/model_vs_tools.tsv, data/processed/baseline_oof.tsv, results/tables/shap_top.tsv
+Usage: python -m src.models.train_baseline
 """
 from __future__ import annotations
 import os
@@ -66,7 +66,7 @@ def main():
     lab = add_structure_features(lab)
     y, fold = lab.y.values, lab.fold.values
     tool_feats = _tool_feats(lab)
-    print("labeled=%d (pos=%d) | tool=%d mech=%d struct=%d | struct 결측률=%.2f"
+    print("labeled=%d (pos=%d) | tool=%d mech=%d struct=%d | struct missing rate=%.2f"
           % (len(lab), int(y.sum()), len(tool_feats), len(MECH_COLS), len(STRUCT_COLS),
              lab["struct_rsa"].isna().mean()))
 
@@ -75,13 +75,13 @@ def main():
     oof_full = run_oof(lab, tool_feats + MECH_COLS + STRUCT_COLS, y, fold)
     lab["model_pred"] = oof_full
 
-    # ---- 가설 검증: AM 놓친 vs 잡은 양성의 RSA/매몰 ----
+    # ---- Hypothesis test: RSA/burial of AM-missed vs AM-caught positives ----
     from scipy.stats import mannwhitneyu
     pp = lab[lab.y == 1].copy()
     pp["am_missed"] = pp.am_pathogenicity < 0.5
     mm, cc = pp.loc[pp.am_missed, "struct_rsa"].dropna(), pp.loc[~pp.am_missed, "struct_rsa"].dropna()
     if len(mm) > 10 and len(cc) > 10:
-        print("[가설] 양성 RSA(표면노출): AM 놓침 중앙 %.3f vs 잡음 %.3f (Mann-Whitney p=%.1e)"
+        print("[hypothesis] positive RSA (surface exposure): AM missed median %.3f vs caught %.3f (Mann-Whitney p=%.1e)"
               % (mm.median(), cc.median(), mannwhitneyu(mm, cc).pvalue))
 
     groups = {"all": np.ones(len(lab), bool),
@@ -105,21 +105,21 @@ def main():
         rows.append(r)
     comp = pd.DataFrame(rows)
     comp.to_csv(os.path.join(TBL, "model_vs_tools.tsv"), sep="\t", index=False)
-    print("\n[비교] gene-group OOF:")
+    print("\n[comparison] gene-group OOF:")
     print(comp[["predictor", "AUROC_all", "AUPRC_all", "AUROC_oncogene", "AUROC_TSG"]].round(4).to_string(index=False))
     a0, a1, a2 = comp.loc[0, "AUROC_all"], comp.loc[1, "AUROC_all"], comp.loc[2, "AUROC_all"]
-    print("\n  +기전(서열) 효과: AUROC %+.4f | +구조 추가 효과: AUROC %+.4f" % (a1 - a0, a2 - a1))
-    print("  최종 tools+mech+struct vs best tool(%.4f): AUROC %+.4f" % (best_au, a2 - best_au))
+    print("\n  +mech(sequence) effect: AUROC %+.4f | +struct additional effect: AUROC %+.4f" % (a1 - a0, a2 - a1))
+    print("  final tools+mech+struct vs best tool(%.4f): AUROC %+.4f" % (best_au, a2 - best_au))
     print("  oncogene(GOF) AUROC: tools %.4f → +mech %.4f → +struct %.4f"
           % (comp.loc[0, "AUROC_oncogene"], comp.loc[1, "AUROC_oncogene"], comp.loc[2, "AUROC_oncogene"]))
 
-    # rescue 비교
+    # rescue comparison
     pos = lab[lab.y == 1]
     am_missed = pos[pos.am_pathogenicity < 0.5]
     for tag, col in [("tools", oof_tools), ("tools+mech", oof_mech), ("tools+mech+struct", oof_full)]:
         lab["_p"] = col
         r = am_missed.merge(lab[["pkey", "_p"]], on="pkey")
-        print("  [rescue/%s] AM 놓친 양성 %d 중 구제(pred>=0.5)=%d (%.1f%%)"
+        print("  [rescue/%s] of %d AM-missed positives, rescued(pred>=0.5)=%d (%.1f%%)"
               % (tag, len(am_missed), int((r["_p"] >= 0.5).sum()), 100 * (r["_p"] >= 0.5).mean()))
     for k in ["JAK2:p.V617F", "MPL:p.W515L", "FGFR3:p.Y373C"]:
         if k in set(lab.pkey):
@@ -132,7 +132,7 @@ def main():
     lab[["pkey", "gene", "role_class", "y", "fold", "model_pred", "am_pathogenicity",
          "cosmic_sample_count"]].to_csv(os.path.join(PROC, "baseline_oof.tsv"), sep="\t", index=False)
 
-    # SHAP (tools+mech 전체 재학습)
+    # SHAP (retrain on the full tools+mech set)
     try:
         import shap
         allf = tool_feats + MECH_COLS + STRUCT_COLS
@@ -143,9 +143,9 @@ def main():
                             "is_mech": [f in MECH_COLS or f in STRUCT_COLS for f in allf],
                             "mean_abs_shap": np.abs(sv).mean(0)}).sort_values("mean_abs_shap", ascending=False)
         imp.to_csv(os.path.join(TBL, "shap_top.tsv"), sep="\t", index=False)
-        print("\n[SHAP] 상위 15 (mech=기전/구조 feature):")
+        print("\n[SHAP] top 15 (mech=mechanism/structure features):")
         print(imp.head(15).to_string(index=False))
-        print("  기전/구조 feature 최상위:")
+        print("  top mechanism/structure features:")
         print(imp[imp.is_mech].head(8).to_string(index=False))
     except Exception as e:
         print("[SHAP] skip:", e)

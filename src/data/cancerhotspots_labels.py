@@ -1,18 +1,18 @@
-"""cancerhotspots.org v2 -> 잔기 hotspot 기반 positive 보조 라벨.
+"""cancerhotspots.org v2 -> residue-hotspot-based auxiliary positive labels.
 
-설계 근거 (phase1_execution.md C, civic-label 한계):
-  - CIViC 'Oncogenic' 근거는 희소(미세변이 positive ~46) + canonical driver 미플래그.
-    cancerhotspots 의 통계적으로 유의한 recurrent hotspot residue 가 positive 의 주 기둥.
-  - SNV-hotspots 시트: 1행 = (residue, 특정 alt AA). 컬럼:
-      Reference_Amino_Acid='Q:422'(잔기 ref:잔기총카운트), Variant_Amino_Acid='R:204'(alt:해당 alt 카운트),
-      Mutation_Count=잔기 총 변이 수, qvalue/log10_pvalue=hotspot 유의성.
-  - ⚠️ Amino_Acid_Position 은 문자열 dtype → int 변환 필요.
-  - ⚠️ 함정: hotspot recurrence 는 feature/label 양쪽에 들어갈 수 있어 순환 위험.
-    여기서는 '잔기 단위 hotspot 라벨'만 만들고, recurrence 카운트를 label에 직접 넣지 않는다
-    (카운트는 분석/보조용으로만 보존). build_dataset 에서 ablation 으로 점검.
+Design rationale (phase1_execution.md C, civic-label limitations):
+  - CIViC 'Oncogenic' evidence is scarce (~46 missense positives) + canonical drivers unflagged.
+    cancerhotspots' statistically significant recurrent hotspot residues are the main pillar of positives.
+  - SNV-hotspots sheet: 1 row = (residue, specific alt AA). Columns:
+      Reference_Amino_Acid='Q:422' (ref residue:total residue count), Variant_Amino_Acid='R:204' (alt:count for that alt),
+      Mutation_Count=total variants at the residue, qvalue/log10_pvalue=hotspot significance.
+  - ⚠️ Amino_Acid_Position is string dtype → needs int conversion.
+  - ⚠️ Pitfall: hotspot recurrence can enter both feature/label, risking circularity.
+    Here we build only 'residue-level hotspot labels' and do not put the recurrence count directly into the label
+    (counts kept for analysis/auxiliary use only). Check via ablation in build_dataset.
 
-출력: data/interim/cancerhotspots_labels.tsv (pkey 단위, alt-specific missense)
-사용: python -m src.data.cancerhotspots_labels
+Output: data/interim/cancerhotspots_labels.tsv (per pkey, alt-specific missense)
+Usage: python -m src.data.cancerhotspots_labels
 """
 from __future__ import annotations
 import argparse
@@ -33,7 +33,7 @@ def _repo_root() -> str:
 
 
 def _split_aa_count(s):
-    """'Q:422' -> ('Q', 422). 비정상 입력은 (None, None)."""
+    """'Q:422' -> ('Q', 422). Malformed input returns (None, None)."""
     if not isinstance(s, str) or ":" not in s:
         return None, None
     aa, _, cnt = s.partition(":")
@@ -55,7 +55,7 @@ def build_hotspot_labels(xls_path: str, qvalue_max: float = 0.05) -> pd.DataFram
             continue
         ref_aa, residue_count = _split_aa_count(r["Reference_Amino_Acid"])
         alt_aa, alt_count = _split_aa_count(r["Variant_Amino_Acid"])
-        # 단일 missense 만: ref/alt 표준 20 AA, alt != ref, nonsense(*) 제외
+        # Single missense only: ref/alt standard 20 AA, alt != ref, nonsense(*) excluded
         if not ref_aa or not alt_aa:
             continue
         if ref_aa not in AA1 or alt_aa not in AA1 or alt_aa == ref_aa:
@@ -65,8 +65,8 @@ def build_hotspot_labels(xls_path: str, qvalue_max: float = 0.05) -> pd.DataFram
             "pkey": protein_key(gene, ref_aa, pos, alt_aa),
             "gene": gene, "ref_aa": ref_aa, "pos": pos, "alt_aa": alt_aa,
             "protein_change": "%s%d%s" % (ref_aa, pos, alt_aa),
-            "hotspot_residue_count": residue_count,   # 잔기 총 변이 수(보조, label 직접사용 금지)
-            "hotspot_alt_count": alt_count,            # 해당 alt 변이 수
+            "hotspot_residue_count": residue_count,   # total variants at the residue (auxiliary, do not use directly as label)
+            "hotspot_alt_count": alt_count,            # count of this alt variant
             "hotspot_qvalue": qv,
             "hotspot_log10p": pd.to_numeric(r.get("log10_pvalue"), errors="coerce"),
             "is_hotspot": bool(pd.notna(qv) and qv <= qvalue_max),

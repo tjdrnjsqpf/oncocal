@@ -1,16 +1,16 @@
-"""COSMIC Cancer Gene Census (CGC) -> 유전자 패널 + GOF/LOF gene-level proxy.
+"""COSMIC Cancer Gene Census (CGC) -> gene panel + gene-level GOF/LOF proxy.
 
-설계 근거 (phase1_execution.md B-1, gap_analysis per-gene 보정):
-  - Scope = cancer gene panel 먼저 → CGC 768 유전자가 permissive 패널 출처(OncoKB 리스트 대신).
-  - ROLE_IN_CANCER(oncogene/TSG/fusion) = 20/20 rule 의 직접적 gene-level proxy:
-        oncogene -> GOF 경향,  TSG -> LOF 경향,  둘 다 -> ambiguous.
-  - MOLECULAR_GENETICS(Dom/Rec) 보조: Dom=GOF/DN 경향, Rec=LOF 경향.
-  - SYNONYMS 에 ENSG/UniProt 포함 → AlphaMissense(transcript/uniprot) 매핑에 사용.
+Design rationale (phase1_execution.md B-1, gap_analysis per-gene calibration):
+  - Scope = cancer gene panel first → CGC 768 genes are the permissive panel source (instead of the OncoKB list).
+  - ROLE_IN_CANCER (oncogene/TSG/fusion) = direct gene-level proxy for the 20/20 rule:
+        oncogene -> GOF tendency,  TSG -> LOF tendency,  both -> ambiguous.
+  - MOLECULAR_GENETICS (Dom/Rec) auxiliary: Dom=GOF/DN tendency, Rec=LOF tendency.
+  - SYNONYMS includes ENSG/UniProt → used for AlphaMissense (transcript/uniprot) mapping.
 
-⚠️ COSMIC 재배포 금지: 이 패널 TSV는 내부 interim 용. 논문엔 요약통계/유전자 수만.
+⚠️ COSMIC redistribution prohibited: this panel TSV is for internal interim use. Only summary stats/gene counts in the paper.
 
-출력: data/interim/cancer_gene_panel.tsv
-사용: python -m src.data.cosmic_panel
+Output: data/interim/cancer_gene_panel.tsv
+Usage: python -m src.data.cosmic_panel
 """
 from __future__ import annotations
 import argparse
@@ -21,7 +21,7 @@ import re
 import pandas as pd
 
 ENSG_RE = re.compile(r"\bENSG\d+(?:\.\d+)?\b")
-# UniProt accession (단순화된 공식 정규식)
+# UniProt accession (simplified official regex)
 UNIPROT_RE = re.compile(r"\b[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9](?:[A-Z][A-Z0-9]{2}[0-9]){1,2}\b")
 
 
@@ -45,14 +45,14 @@ def _role_class(role: str) -> str:
 
 
 def _mech_proxy(role_class: str, mol_gen: str) -> str:
-    """gene-level 기전 proxy (변이 단위 아님 — 약한 prior)."""
+    """gene-level mechanism proxy (not per-variant — a weak prior)."""
     if role_class == "oncogene":
         return "GOF"
     if role_class == "TSG":
         return "LOF"
     if role_class == "both":
         return "ambiguous"
-    # role 불명 시 분자유전학으로 보조 추정
+    # If role is unknown, estimate via molecular genetics as a fallback
     mg = (mol_gen or "").lower()
     if mg == "dom":
         return "GOF?"
@@ -103,7 +103,7 @@ def main():
     print("[cosmic_panel] genes: %d" % len(df))
     print("role_class:"); print(df["role_class"].value_counts().to_string())
     print("\nmech_proxy:"); print(df["mech_proxy"].value_counts().to_string())
-    print("\nENSG 매핑 가능: %d / UniProt 매핑 가능: %d"
+    print("\nENSG mappable: %d / UniProt mappable: %d"
           % (int((df["ensembl_gene"] != "").sum()), int((df["uniprot"] != "").sum())))
     print("[cosmic_panel] wrote -> %s" % args.out)
 

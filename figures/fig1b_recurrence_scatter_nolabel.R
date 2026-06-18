@@ -1,4 +1,4 @@
-# Fig 1b (라벨 없음) — AM raw vs COSMIC recurrence, 점 라벨 제거 (사용자 직접 주석용)
+# Fig 1b (no labels) — AM raw vs COSMIC recurrence, point labels removed (for manual annotation by the user)
 # Input: tables/fig1_input.tsv  Output: fig1b_recurrence_scatter_nolabel.{pdf,png,svg}
 suppressPackageStartupMessages({library(tidyverse)})
 
@@ -18,7 +18,7 @@ p <- ggplot(d, aes(cosmic_sample_count, am_pathogenicity, color = status)) +
        subtitle = "Oncogenic positives; dashed line = pathogenic threshold (0.5)") +
   theme_classic(base_size = 12) + theme(legend.position = "right")
 
-ggsave("figures_R/fig1b_recurrence_scatter_nolabel.pdf", p, width = 7.5, height = 5)  # 벡터: Illustrator/Inkscape 편집 가능
+ggsave("figures_R/fig1b_recurrence_scatter_nolabel.pdf", p, width = 7.5, height = 5)  # vector: editable in Illustrator/Inkscape
 ggsave("figures_R/fig1b_recurrence_scatter_nolabel.png", p, width = 7.5, height = 5, dpi = 300)
-# SVG 원하면: install.packages("svglite") 후 아래 주석 해제
+# For SVG: install.packages("svglite") then uncomment the line below
 # ggsave("figures_R/fig1b_recurrence_scatter_nolabel.svg", p, width = 7.5, height = 5)

@@ -1,15 +1,15 @@
-"""dbNSFP 5.3.1a (GRCh38, BGZF+tabix) -> 패널 missense 다도구 점수표.
+"""dbNSFP 5.3.1a (GRCh38, BGZF+tabix) -> panel missense multi-tool score table.
 
-설계 (PROGRESS.md §7, [[join-key-gene-protein]]):
-  - dbNSFP BGZF는 GRCh38 좌표 정렬 + tabix 인덱스 → **패널 768 유전자 좌표영역만 tabix로 추출**(50GB 스트리밍 불요).
-  - 점수 정규화: dbNSFP 제공 **`*_rankscore`(0–1, 높을수록 damaging, 방향 통일)** 컬럼을 그대로 사용 → 30여 도구 한 번에 비교 가능.
-  - 보존도(GERP++_RS, phyloP/phastCons) + **gnomAD4.1 joint AF**(common variant=benign negative 보강).
-  - 다중 transcript 값('; ' 구분)은 숫자=최댓값(가장 damaging), 결측='.'→ NaN.
-  - 출력은 **GRCh38 좌표 키** → build_dataset 에서 AM universe 에 좌표 join.
+Design (PROGRESS.md §7, [[join-key-gene-protein]]):
+  - dbNSFP BGZF is GRCh38 coordinate-sorted + tabix-indexed → **extract only the panel's 768-gene coordinate regions via tabix** (no 50GB streaming needed).
+  - Score normalization: use the dbNSFP-provided **`*_rankscore` (0–1, higher=more damaging, direction unified)** columns as-is → compare ~30 tools at once.
+  - Conservation (GERP++_RS, phyloP/phastCons) + **gnomAD4.1 joint AF** (common variant=benign negative supplement).
+  - Multi-transcript values ('; ' separated): numeric=max (most damaging), missing='.'→ NaN.
+  - Output is keyed by **GRCh38 coordinates** → coordinate-joined onto the AM universe in build_dataset.
 
-⚠️ 컬럼은 이름으로 동적 선택(버전 견고). pysam.TabixFile 사용(CLI tabix 불요).
-출력: data/interim/dbnsfp_panel.tsv
-사용: python -m src.data.dbnsfp_join
+⚠️ Columns are selected dynamically by name (version-robust). Uses pysam.TabixFile (no CLI tabix needed).
+Output: data/interim/dbnsfp_panel.tsv
+Usage: python -m src.data.dbnsfp_join
 """
 from __future__ import annotations
 import argparse
@@ -22,7 +22,7 @@ import pysam
 AA1 = set("ACDEFGHIKLMNPQRSTVWY")
 
 KEY_COLS = ["#chr", "pos(1-based)", "ref", "alt", "aaref", "aaalt", "genename"]
-# rankscore 외에 추가로 보존할 컬럼(원점수/보존도/빈도/메타)
+# Columns to keep in addition to rankscore (raw scores/conservation/frequency/meta)
 EXTRA_COLS = [
     "AlphaMissense_score", "AlphaMissense_pred", "REVEL_score", "CADD_phred",
     "GERP++_RS", "phyloP100way_vertebrate", "phyloP470way_mammalian",
@@ -42,7 +42,7 @@ def _read_header(bgzf: str) -> list[str]:
 
 
 def _num_max(cell: str):
-    """다중 transcript('; ' 또는 ';') 숫자 셀 -> 최댓값(가장 damaging). '.'/빈값 -> None."""
+    """Multi-transcript ('; ' or ';') numeric cell -> max (most damaging). '.'/empty -> None."""
     if cell is None or cell in (".", ""):
         return None
     best = None
@@ -76,11 +76,11 @@ def build_dbnsfp_panel(bgzf: str, panel: pd.DataFrame):
         "phyloP100way_vertebrate", "phyloP470way_mammalian",
         "phastCons100way_vertebrate", "bStatistic",
         "gnomAD4.1_joint_AF", "gnomAD4.1_joint_POPMAX_AF"}
-    print("[dbnsfp] rankscore 도구 %d개 + 추가 %d개 선택"
+    print("[dbnsfp] selected %d rankscore tools + %d extra"
           % (len(rank_cols), len([c for c in EXTRA_COLS if c in idx])))
 
-    # dbNSFP 일부 필드에 비ASCII 문자 → latin-1은 모든 바이트를 디코드(크래시 방지).
-    # 우리가 쓰는 건 숫자 점수 컬럼이라 텍스트 글리프 손실은 무해.
+    # Some dbNSFP fields contain non-ASCII characters → latin-1 decodes all bytes (prevents crashes).
+    # We only use numeric score columns, so any text glyph loss is harmless.
     tbx = pysam.TabixFile(bgzf, encoding="latin-1")
     contigs = set(tbx.contigs)
     rows = []
@@ -104,7 +104,7 @@ def build_dbnsfp_panel(bgzf: str, panel: pd.DataFrame):
             if len(ref) != 1 or len(alt) != 1:
                 continue
             if aaref not in AA1 or aaalt not in AA1 or aaref == aaalt:
-                continue  # 단일 missense 만
+                continue  # single missense only
             gkey = (ch, p[idx["pos(1-based)"]], ref, alt)
             if gkey in seen:
                 continue
@@ -142,10 +142,10 @@ def main():
     df.to_csv(args.out, sep="\t", index=False)
     print("[dbnsfp] panel missense variants: %d (genes=%d)"
           % (len(df), df["dbnsfp_gene"].nunique()))
-    print("  컬럼 수: %d" % df.shape[1])
-    # AlphaMissense 일치성 점검(브리지 vs dbNSFP)
+    print("  number of columns: %d" % df.shape[1])
+    # AlphaMissense consistency check (bridge vs dbNSFP)
     if "dbnsfp_AlphaMissense_score" in df.columns:
-        print("  AlphaMissense_score 결측률: %.1f%%"
+        print("  AlphaMissense_score missing rate: %.1f%%"
               % (df["dbnsfp_AlphaMissense_score"].isna().mean() * 100))
     print("[dbnsfp] wrote -> %s" % args.out)
 
