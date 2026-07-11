@@ -1,0 +1,3 @@
+axis	naive_r	naive_p	gee_OR_per_SD	gee_CI_lo	gee_CI_hi	gee_wald_p	wilcoxon_gene_p	n_gene_both	boot_r_med	boot_r_lo	boot_r_hi	boot_mdiff_lo	boot_mdiff_hi
+phyloP	0.655	1.229147215016203e-219	0.469	0.399	0.551	4.830257297253951e-20	6.629029093039522e-18	176	0.653	0.553	0.748	4.054	7.071
+RSA	-0.578	2.6045675343577136e-154	2.086	1.857	2.343	2.317007455293104e-35	2.492596820802123e-16	159	-0.574	-0.663	-0.473	-0.572	-0.388

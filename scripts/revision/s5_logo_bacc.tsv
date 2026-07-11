@@ -1,0 +1,3 @@
+predictor	global_bacc	pergene_LOO_bacc	delta	n_variant	n_gene
+AlphaMissense	0.813	0.829	0.016	9351	118
+OncoCal	0.843	0.874	0.032	9351	118

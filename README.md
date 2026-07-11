@@ -1,7 +1,7 @@
 # OncoCal — cancer-calibrated missense oncogenicity benchmark
 
-Code and openly licensed data for *"Conservation and solvent exposure explain the systematic
-underestimation of activating cancer drivers by missense pathogenicity predictors"* (Sung-Gwon Lee).
+Code and openly licensed data for *"An openly licensed benchmark and per-gene calibration map for missense pathogenicity
+predictors on activating cancer drivers"* (Sung-Gwon Lee).
 
 Germline-trained missense predictors (AlphaMissense, REVEL, …) systematically under-score
 activating gain-of-function cancer drivers (e.g., JAK2 V617F). This repository contains the
@@ -10,7 +10,7 @@ pipeline, the openly licensed benchmark, the per-gene calibration map, and the f
 ## Repository layout
 ```
 src/         analysis pipeline (data build, features, model, evaluation)
-scripts/     data download / run scripts
+scripts/     data download / run scripts (scripts/revision/ = robustness re-analyses, 2026-07)
 figures/     R (ggplot2) scripts to reproduce all figures (input = tables/)
 tables/      result and summary tables (open data; see Data below)
 data/        README only — restricted/large source data fetched from providers
@@ -36,10 +36,15 @@ python -m src.models.train_baseline                          # OncoCal, gene-gro
 cd figures && for f in fig*.R; do Rscript "$f"; done
 ```
 
+## Revision robustness analyses
+`scripts/revision/` reproduces the statistical robustness checks and the rebuilt Figure 2 from the
+revised manuscript (gene-clustered statistics, threshold-free comparison, ascertainment controls,
+leave-one-out calibration, bootstrap CIs). See `scripts/revision/README.md`.
+
 ## Citation
-Lee S-G. Conservation and solvent exposure explain the systematic underestimation of activating
-cancer drivers by missense pathogenicity predictors. *Genome Medicine* (in submission). 2026.
-Archived at Zenodo: DOI 10.5281/zenodo.XXXXXXX.
+Lee S-G. An openly licensed benchmark and per-gene calibration map for missense pathogenicity
+predictors on activating cancer drivers. Manuscript under review, 2026.
+Archived at Zenodo (concept DOI): 10.5281/zenodo.20741850.
 
 ## License
 Code: MIT (see LICENSE). Data tables: per source licence (CIViC CC0; ClinVar/cancerhotspots/gnomAD open;

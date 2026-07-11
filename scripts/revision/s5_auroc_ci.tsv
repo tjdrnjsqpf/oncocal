@@ -1,0 +1,2 @@
+model	best_tool	delta_auroc	ci_lo	ci_hi	P_delta_gt0
+OncoCal_tools	AlphaMissense	0.0579	0.052	0.0637	1.0

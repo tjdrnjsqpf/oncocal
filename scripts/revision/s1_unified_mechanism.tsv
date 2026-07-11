@@ -1,0 +1,4 @@
+axis	missed_n	missed_median	caught_n	caught_median	median_diff	rank_biserial_r	mannwhitney_p
+phyloP100way	1069	2.51	2851	7.886	5.376	0.655	1.229147215016203e-219
+GERP++_RS	1038	3.915	2850	5.25	1.335	0.407	2.9401073121632332e-84
+RSA	938	0.671	2755	0.185	-0.486	-0.578	2.6045675343577136e-154

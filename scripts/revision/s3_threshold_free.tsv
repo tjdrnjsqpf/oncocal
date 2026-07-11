@@ -1,0 +1,4 @@
+metric	unsup_mean	sup_mean	diff	mannwhitney_p	perm_p
+gof_gap	0.0395	0.0221	0.0174	0.0149	0.0545
+onco_auroc	0.7444	0.8351	-0.0907	0.0006	0.0001
+all_auroc	0.7429	0.8216	-0.0787	0.0008	0.0003
