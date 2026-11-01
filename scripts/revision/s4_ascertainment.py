@@ -2,7 +2,7 @@
 Set = S1 unified (unique oncogenic positive, dedup, missed=RAW<0.5).
 (1) diagnose source skew, (2) gene-clustered GEE within a single source (hotspot-only, cosmic-only),
 (3) tests within recurrence-matched strata.
-Usage: python paper_handoff/revision/s4_ascertainment.py
+Usage: python scripts/revision/s4_ascertainment.py
 """
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))

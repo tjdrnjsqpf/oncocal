@@ -16,7 +16,8 @@ from ..features.mechanism_features import add_mechanism_features, MECH_COLS
 from ..features.structure_features import add_structure_features, STRUCT_COLS
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-OUTS = [os.path.join(ROOT, "paper_handoff", "tables"), os.path.join(ROOT, "results", "tables")]
+from src.paths import table_out_dirs
+OUTS = table_out_dirs()
 PARAMS = dict(objective="binary", metric="auc", learning_rate=0.03, num_leaves=31,
               min_child_samples=40, subsample=0.8, subsample_freq=1, colsample_bytree=0.7,
               reg_lambda=1.0, n_estimators=2000, verbose=-1)
@@ -155,7 +156,7 @@ def main():
     print("  tools rescue rate: %.1f%% ± %.1f%%" % (np.mean(resc_tools), np.std(resc_tools, ddof=1)))
     if jak2:
         print("  JAK2 V617F p_model_full: %.3f ± %.3f (AM raw=0.334)" % (np.mean(jak2), np.std(jak2, ddof=1)))
-    print("\n[done] -> paper_handoff/tables/ + results/tables/ {model_vs_tools, oof_predictions}.tsv")
+    print("\n[done] -> %s {model_vs_tools, oof_predictions}.tsv" % ", ".join(OUTS))
 
 
 if __name__ == "__main__":

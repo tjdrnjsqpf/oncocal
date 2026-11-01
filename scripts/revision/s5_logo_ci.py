@@ -1,11 +1,12 @@
 """S5 — (1) leave-one-out per-gene threshold balanced-acc (remove in-sample bias),
         (2) OncoCal vs best tool AUROC bootstrap 95% CI.
-Usage: python paper_handoff/revision/s5_logo_ci.py
+Usage: python scripts/revision/s5_logo_ci.py
 """
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 import numpy as np, pandas as pd
 from sklearn.metrics import roc_auc_score, balanced_accuracy_score
+from src.paths import find_table, revision_out_dir
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 RNG = np.random.RandomState(2024)
@@ -59,10 +60,10 @@ for col, gt, nm in [("am_pathogenicity", gt_am, "AlphaMissense"), ("model_pred",
           % (nm, bg, bl, bl-bg, n, ng))
     rows.append({"predictor":nm,"global_bacc":round(bg,3),"pergene_LOO_bacc":round(bl,3),
                  "delta":round(bl-bg,3),"n_variant":n,"n_gene":ng})
-pd.DataFrame(rows).to_csv(os.path.join(ROOT,"paper_handoff","revision","s5_logo_bacc.tsv"),sep="\t",index=False)
+pd.DataFrame(rows).to_csv(os.path.join(revision_out_dir(),"s5_logo_bacc.tsv"),sep="\t",index=False)
 
 # ---------- (2) AUROC bootstrap 95% CI ----------
-oof = pd.read_csv(os.path.join(ROOT,"paper_handoff","tables","oof_predictions.tsv"), sep="\t")
+oof = pd.read_csv(find_table("oof_predictions.tsv"), sep="\t")
 print("\n=== (2) OncoCal vs best tool AUROC bootstrap 95%% CI (oof n=%d, pos=%d) ===" % (len(oof), int(oof.y_true.sum())))
 y = oof.y_true.values
 preds = {"OncoCal(tools)": oof.p_model_tools.values, "OncoCal(full)": oof.p_model_full.values,
@@ -94,5 +95,5 @@ print("  deltaAUROC OncoCal(tools) - %s = %.4f  95%%CI [%.4f, %.4f]  (P(delta>0)
       % (best_tool, gmd, glo, ghi, np.mean(np.array(gaps)>0)))
 pd.DataFrame([{"model":"OncoCal_tools","best_tool":best_tool,"delta_auroc":round(gmd,4),
               "ci_lo":round(glo,4),"ci_hi":round(ghi,4),"P_delta_gt0":round(np.mean(np.array(gaps)>0),4)}]
-             ).to_csv(os.path.join(ROOT,"paper_handoff","revision","s5_auroc_ci.tsv"),sep="\t",index=False)
+             ).to_csv(os.path.join(revision_out_dir(),"s5_auroc_ci.tsv"),sep="\t",index=False)
 print("\n[saved] s5_logo_bacc.tsv, s5_auroc_ci.tsv")

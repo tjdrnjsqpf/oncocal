@@ -1,6 +1,14 @@
 # Fig 4a (main) — Model vs predictors: AUROC & AUPRC, mean±sd over 10 seeds, by role
 # Input: tables/model_vs_tools.tsv (mean/sd columns)  Output: fig4_model_vs_tools.{pdf,png}
 # Message: model (stack) > best single tool (robust); the three model variants are identical within sd (mech/struct add nothing).
+# Resolve the repository root from this script's own location so the script runs
+# correctly whether invoked as `Rscript figures/<name>.R` from the repo root or as
+# `Rscript <name>.R` from inside figures/.
+.a <- commandArgs(trailingOnly = FALSE)
+.f <- sub("^--file=", "", .a[grep("^--file=", .a)])
+if (length(.f)) setwd(normalizePath(file.path(dirname(.f[1]), "..")))
+dir.create("figures_R", showWarnings = FALSE)   # output directory, not tracked in git
+
 suppressPackageStartupMessages({library(tidyverse)})
 PREV <- 0.188   # positive prevalence = AUPRC random baseline
 

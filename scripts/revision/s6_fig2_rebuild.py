@@ -3,7 +3,7 @@ Unified definition (S1): unique oncogenic positive (dedup pkey), missed = AM RAW
 Outputs:
   [A] fig2_master_3922.tsv — shared input for Fig2A scatter (AM raw vs COSMIC recurrence) + Fig2B (phyloP vs RSA)
   [B] recompute corner statistics — the "79% missed vs 14% elsewhere" values for the unified set
-Usage: python paper_handoff/revision/s6_fig2_rebuild.py
+Usage: python scripts/revision/s6_fig2_rebuild.py
 """
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
@@ -11,7 +11,8 @@ import numpy as np, pandas as pd
 from src.features.structure_features import add_structure_features
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-OUT = os.path.join(ROOT, "paper_handoff", "revision")
+from src.paths import revision_out_dir
+OUT = revision_out_dir()
 df = pd.read_parquet(os.path.join(ROOT, "data", "processed", "dataset.parquet"))
 
 pos = df[df.oncogenic_label == "positive"].drop_duplicates("pkey").copy()

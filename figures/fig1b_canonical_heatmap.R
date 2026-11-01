@@ -1,6 +1,14 @@
 # Fig 1b — Canonical driver x tool score heatmap, faceted by gene role (GOF vs LOF)
 # Input: tables/canonical_driver_panel.tsv  Output: fig1b_canonical_heatmap.{pdf,png}
 # Message: low scores (red) are scattered across the oncogene (GOF) block, contrasting with the TSG/both pattern.
+# Resolve the repository root from this script's own location so the script runs
+# correctly whether invoked as `Rscript figures/<name>.R` from the repo root or as
+# `Rscript <name>.R` from inside figures/.
+.a <- commandArgs(trailingOnly = FALSE)
+.f <- sub("^--file=", "", .a[grep("^--file=", .a)])
+if (length(.f)) setwd(normalizePath(file.path(dirname(.f[1]), "..")))
+dir.create("figures_R", showWarnings = FALSE)   # output directory, not tracked in git
+
 suppressPackageStartupMessages({library(tidyverse)})
 
 d0 <- read.delim("tables/canonical_driver_panel.tsv", check.names = FALSE)

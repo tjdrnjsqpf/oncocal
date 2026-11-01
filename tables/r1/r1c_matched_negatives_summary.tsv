@@ -1,0 +1,6 @@
+stratum	n_pos	n_neg	n_gene	p_model_tools_mean	p_model_full_mean	AlphaMissense_mean	VARITY_R_mean	p_model_tools_sd	p_model_full_sd	AlphaMissense_sd	VARITY_R_sd
+clinvar_only	3922.0	15379.0	671.0	0.9265	0.9251	0.8698	0.8697				
+gene_matched	2027.0	2027.0	401.0	0.8949	0.9	0.8474	0.8285	0.0018	0.0019	0.0028	0.0029
+gene_matched_rare	1730.0	1730.0	367.0	0.8966	0.903	0.8754	0.8495	0.0016	0.0016	0.0026	0.0021
+original	3922.0	16893.0	704.0	0.928	0.9269	0.8701	0.8706				
+rare_benign	3922.0	14167.0	658.0	0.9222	0.9208	0.8676	0.8678				

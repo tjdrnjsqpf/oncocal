@@ -1,0 +1,9 @@
+role_set	model	scheme	model_cut	n_am_missed	gained	lost	net	rescue_pct	model_sens	model_spec	am_sens	am_spec
+all_roles	p_model_tools	published_0.5	0.5	1071	165	281	-116	15.4	0.6973	0.9672	0.7269	0.9002
+all_roles	p_model_tools	spec_matched	0.1899	1071	378	96	282	35.3	0.7988	0.9002	0.7269	0.9002
+all_roles	p_model_full	published_0.5	0.5	1071	174	290	-116	16.2	0.6973	0.9686	0.7269	0.9002
+all_roles	p_model_full	spec_matched	0.1842	1071	383	95	288	35.8	0.8004	0.9002	0.7269	0.9002
+core_roles	p_model_tools	published_0.5	0.5	746	141	248	-107	18.9	0.7554	0.9652	0.7861	0.898
+core_roles	p_model_tools	spec_matched	0.2022	746	291	91	200	39.0	0.8434	0.898	0.7861	0.898
+core_roles	p_model_full	published_0.5	0.5	746	147	258	-111	19.7	0.7542	0.9658	0.7861	0.898
+core_roles	p_model_full	spec_matched	0.1956	746	315	88	227	42.2	0.8512	0.898	0.7861	0.898

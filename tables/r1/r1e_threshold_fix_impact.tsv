@@ -1,0 +1,5 @@
+role_set	predictor	global_threshold_legacy	global_threshold_corrected	bacc_pergene_LOVO_legacy	bacc_pergene_LOVO_corrected	delta_LOVO_legacy	delta_LOVO_corrected
+core_roles	AlphaMissense	0.4915	0.4916	0.8616	0.8563	0.0149	0.0096
+core_roles	OncoCal	0.2403	0.2403	0.8907	0.8847	0.0105	0.0044
+all_roles	AlphaMissense	0.469	0.4695	0.8291	0.8252	0.0158	0.0119
+all_roles	OncoCal	0.1693	0.1694	0.8745	0.8686	0.0318	0.0259

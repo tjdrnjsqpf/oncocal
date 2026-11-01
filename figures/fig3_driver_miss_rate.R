@@ -1,6 +1,14 @@
 # Fig 3 — Driver under-scoring rate per tool (unsupervised vs supervised)
 # Input: tables/driver_miss_rate.tsv  Output: fig3_driver_miss_rate.{pdf,png}
 # Message: unsupervised (unsup) tools miss high-recurrence drivers more often (14.3% vs 9.1%).
+# Resolve the repository root from this script's own location so the script runs
+# correctly whether invoked as `Rscript figures/<name>.R` from the repo root or as
+# `Rscript <name>.R` from inside figures/.
+.a <- commandArgs(trailingOnly = FALSE)
+.f <- sub("^--file=", "", .a[grep("^--file=", .a)])
+if (length(.f)) setwd(normalizePath(file.path(dirname(.f[1]), "..")))
+dir.create("figures_R", showWarnings = FALSE)   # output directory, not tracked in git
+
 suppressPackageStartupMessages({library(tidyverse)})
 
 # dbNSFP column name → official publication tool name (cleaning up underscores etc.). Keep original name if not in the mapping.

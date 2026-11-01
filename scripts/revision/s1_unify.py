@@ -1,13 +1,14 @@
 """S1 — Recompute mechanism values after unifying to a single definition.
 Definition: oncogenic positive **unique variant (dedup pkey)**, missed = AM RAW(am_pathogenicity) < 0.5.
 Recompute phyloP/RSA/GERP all from the same set to eliminate mixing of dedup/non-dedup.
-Usage: python paper_handoff/revision/s1_unify.py
+Usage: python scripts/revision/s1_unify.py
 """
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 import numpy as np, pandas as pd
 from scipy.stats import mannwhitneyu
 from src.features.structure_features import add_structure_features
+from src.paths import revision_out_dir
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 df = pd.read_parquet(os.path.join(ROOT, "data", "processed", "dataset.parquet"))
@@ -39,6 +40,6 @@ for name, col in [("phyloP100way", "dbnsfp_phyloP100way_vertebrate"),
 res = pd.DataFrame(rows)
 print("\nMechanism recomputed under unified definition (naive Mann-Whitney, clustering-corrected in S2):")
 print(res.to_string(index=False))
-res.to_csv(os.path.join(ROOT, "paper_handoff", "revision", "s1_unified_mechanism.tsv"),
+res.to_csv(os.path.join(revision_out_dir(), "s1_unified_mechanism.tsv"),
            sep="\t", index=False)
 print("\n[saved] s1_unified_mechanism.tsv")

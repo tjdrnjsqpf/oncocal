@@ -15,7 +15,8 @@ from ..features.mechanism_features import add_mechanism_features, MECH_COLS
 from ..features.structure_features import add_structure_features, STRUCT_COLS
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-OUT = os.path.join(ROOT, "paper_handoff", "tables")
+from src.paths import table_out_dirs
+OUT = table_out_dirs()[0]
 
 
 def main():
@@ -62,7 +63,7 @@ def main():
              roc_auc_score(y, lab["dbnsfp_VARITY_R_rankscore"].fillna(0.5))))
     print("    VARITY_R missing: %d / AM missing: %d"
           % (out.VARITY_R.isna().sum(), out.AlphaMissense.isna().sum()))
-    print("\n[done] -> paper_handoff/tables/{fig2_rsa_input,oof_predictions}.tsv")
+    print("\n[done] -> %s/{fig2_rsa_input,oof_predictions}.tsv" % OUT)
 
 
 if __name__ == "__main__":

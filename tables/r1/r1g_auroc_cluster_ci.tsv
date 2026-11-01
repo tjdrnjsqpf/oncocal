@@ -1,0 +1,21 @@
+role_set	scheme	quantity	point	ci_lo	ci_hi	n_boot	P_gt_0	excludes_zero
+all_roles	variant	p_model_tools	0.928	0.9231	0.9325	2000		
+all_roles	variant	p_model_full	0.9269	0.922	0.9315	2000		
+all_roles	variant	AlphaMissense	0.8701	0.8624	0.8773	2000		
+all_roles	variant	VARITY_R	0.8578	0.85	0.8649	2000		
+all_roles	variant	dAUROC_OncoCal_minus_AlphaMissense	0.0579	0.0522	0.0634	2000	1.0	YES
+all_roles	gene_clustered	p_model_tools	0.928	0.9047	0.9464	2000		
+all_roles	gene_clustered	p_model_full	0.9269	0.8974	0.949	2000		
+all_roles	gene_clustered	AlphaMissense	0.8701	0.8129	0.9099	2000		
+all_roles	gene_clustered	VARITY_R	0.8578	0.795	0.905	2000		
+all_roles	gene_clustered	dAUROC_OncoCal_minus_AlphaMissense	0.0579	0.0305	0.1001	2000	1.0	YES
+core_roles	variant	p_model_tools	0.9389	0.9336	0.9435	2000		
+core_roles	variant	p_model_full	0.9428	0.9378	0.9473	2000		
+core_roles	variant	AlphaMissense	0.9076	0.901	0.9141	2000		
+core_roles	variant	VARITY_R	0.8978	0.8911	0.904	2000		
+core_roles	variant	dAUROC_OncoCal_minus_AlphaMissense	0.0313	0.0265	0.0359	2000	1.0	YES
+core_roles	gene_clustered	p_model_tools	0.9389	0.919	0.9536	2000		
+core_roles	gene_clustered	p_model_full	0.9428	0.9238	0.9566	2000		
+core_roles	gene_clustered	AlphaMissense	0.9076	0.8808	0.9279	2000		
+core_roles	gene_clustered	VARITY_R	0.8978	0.865	0.9238	2000		
+core_roles	gene_clustered	dAUROC_OncoCal_minus_AlphaMissense	0.0313	0.019	0.0466	2000	1.0	YES

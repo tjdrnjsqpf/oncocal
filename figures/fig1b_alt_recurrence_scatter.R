@@ -1,6 +1,14 @@
 # Fig 1b (alternative) — AlphaMissense raw scores vs COSMIC recurrence (oncogenic positives)
 # Input: tables/fig1_input.tsv  Output: fig1b_recurrence_scatter.{pdf,png}
 # Message: most score high, but a clinically important minority (e.g. JAK2 V617F) are highly recurrent yet missed below 0.5.
+# Resolve the repository root from this script's own location so the script runs
+# correctly whether invoked as `Rscript figures/<name>.R` from the repo root or as
+# `Rscript <name>.R` from inside figures/.
+.a <- commandArgs(trailingOnly = FALSE)
+.f <- sub("^--file=", "", .a[grep("^--file=", .a)])
+if (length(.f)) setwd(normalizePath(file.path(dirname(.f[1]), "..")))
+dir.create("figures_R", showWarnings = FALSE)   # output directory, not tracked in git
+
 suppressPackageStartupMessages({library(tidyverse)})
 have_repel <- requireNamespace("ggrepel", quietly = TRUE)
 

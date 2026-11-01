@@ -1,0 +1,7 @@
+role_set	missed_def	threshold	n_scored	n_missed	pct_missed	description
+core_roles	official_notLP	0.564	3487	811	23.26	AlphaMissense below likely-pathogenic (official 0.564)
+core_roles	official_LB	0.34	3487	601	17.24	AlphaMissense likely-benign (official 0.34)
+core_roles	legacy_0.5	0.5	3487	746	21.39	original manuscript cut (0.5)
+all_roles	official_notLP	0.564	3922	1139	29.04	AlphaMissense below likely-pathogenic (official 0.564)
+all_roles	official_LB	0.34	3922	911	23.23	AlphaMissense likely-benign (official 0.34)
+all_roles	legacy_0.5	0.5	3922	1071	27.31	original manuscript cut (0.5)

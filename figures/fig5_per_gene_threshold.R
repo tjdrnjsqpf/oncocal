@@ -1,6 +1,14 @@
 # Fig 5 — Per-gene oncogenic threshold heterogeneity (AlphaMissense)
 # Input: tables/per_gene_calibration.tsv  Output: fig5_per_gene_threshold.{pdf,png}
 # Message: per-gene oncogenic thresholds span widely from 0.07 to 0.99 (a global 0.469 cannot cover this).
+# Resolve the repository root from this script's own location so the script runs
+# correctly whether invoked as `Rscript figures/<name>.R` from the repo root or as
+# `Rscript <name>.R` from inside figures/.
+.a <- commandArgs(trailingOnly = FALSE)
+.f <- sub("^--file=", "", .a[grep("^--file=", .a)])
+if (length(.f)) setwd(normalizePath(file.path(dirname(.f[1]), "..")))
+dir.create("figures_R", showWarnings = FALSE)   # output directory, not tracked in git
+
 suppressPackageStartupMessages({library(tidyverse)})
 
 d <- read.delim("tables/per_gene_calibration.tsv", check.names = FALSE) %>%

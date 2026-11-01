@@ -1,0 +1,7 @@
+role_set	missed_def	n_corner	pct_missed_in_corner	n_elsewhere	pct_missed_elsewhere
+core_roles	official_notLP	346	72.3	2928	14.4
+core_roles	official_LB	346	63.3	2928	9.1
+core_roles	legacy_0.5	346	70.2	2928	12.9
+all_roles	official_notLP	573	82.2	3118	16.6
+all_roles	official_LB	573	76.6	3118	11.2
+all_roles	legacy_0.5	573	80.8	3118	15.2

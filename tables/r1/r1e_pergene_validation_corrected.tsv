@@ -1,0 +1,5 @@
+role_set	threshold_fn	predictor	global_threshold	n_variant	n_gene	bacc_global	bacc_pergene_LOVO	delta_LOVO	bacc_pergene_2fold
+core_roles	corrected	AlphaMissense	0.4916	8660	104	0.8467	0.8563	0.0096	0.8496
+core_roles	corrected	OncoCal	0.2403	8660	104	0.8803	0.8847	0.0044	0.8781
+all_roles	corrected	AlphaMissense	0.4695	9351	118	0.8133	0.8252	0.0119	0.8294
+all_roles	corrected	OncoCal	0.1694	9351	118	0.8427	0.8686	0.0259	0.8607

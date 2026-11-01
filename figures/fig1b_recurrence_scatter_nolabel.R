@@ -1,5 +1,13 @@
 # Fig 1b (no labels) — AM raw vs COSMIC recurrence, point labels removed (for manual annotation by the user)
 # Input: tables/fig1_input.tsv  Output: fig1b_recurrence_scatter_nolabel.{pdf,png,svg}
+# Resolve the repository root from this script's own location so the script runs
+# correctly whether invoked as `Rscript figures/<name>.R` from the repo root or as
+# `Rscript <name>.R` from inside figures/.
+.a <- commandArgs(trailingOnly = FALSE)
+.f <- sub("^--file=", "", .a[grep("^--file=", .a)])
+if (length(.f)) setwd(normalizePath(file.path(dirname(.f[1]), "..")))
+dir.create("figures_R", showWarnings = FALSE)   # output directory, not tracked in git
+
 suppressPackageStartupMessages({library(tidyverse)})
 
 d <- read.delim("tables/fig1_input.tsv", check.names = FALSE) %>%

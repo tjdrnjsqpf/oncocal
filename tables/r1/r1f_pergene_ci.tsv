@@ -1,0 +1,5 @@
+role_set	predictor	n_gene	n_variant	delta_point	boot_median	ci_lo	ci_hi	P_delta_gt_0	excludes_zero	n_boot
+core_roles	AlphaMissense	104	8660	0.0096	0.0078	-0.0187	0.0319	0.73	no	2000
+core_roles	OncoCal	104	8660	0.0044	0.0024	-0.0239	0.03	0.561	no	2000
+all_roles	AlphaMissense	118	9351	0.0119	0.0087	-0.016	0.0324	0.738	no	2000
+all_roles	OncoCal	118	9351	0.0259	0.0174	-0.0153	0.0603	0.8275	no	2000

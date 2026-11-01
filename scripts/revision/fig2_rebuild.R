@@ -1,5 +1,5 @@
 # Figure 2 regeneration — unified set N=3,922 oncogenic positives (replaces old build 2,415)
-# input : fig2_master_3922.tsv  (located alongside in paper_handoff/revision/)
+# input : fig2_master_3922.tsv  (located alongside this script)
 # def   : AM-missed = AlphaMissense raw pathogenicity < 0.5  (1,071 / 3,922 = 27.3%)
 # corner: phyloP100way < 4 & RSA > 0.4  ->  81% missed vs 15% elsewhere (S6 recomputed)
 # usage : run from the same folder (or adjust paths)

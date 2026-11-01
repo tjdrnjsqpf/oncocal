@@ -2,6 +2,14 @@
 # Input: tables/fig1_input.tsv (phyloP, GERP, AM_status)
 #        + RSA: ⚠️ fig1_input.tsv has no RSA column → struct_rsa must be exported on the server (see below).
 # Output: fig2_conservation.{pdf,png} (+ fig2_rsa.* once the RSA TSV arrives)
+# Resolve the repository root from this script's own location so the script runs
+# correctly whether invoked as `Rscript figures/<name>.R` from the repo root or as
+# `Rscript <name>.R` from inside figures/.
+.a <- commandArgs(trailingOnly = FALSE)
+.f <- sub("^--file=", "", .a[grep("^--file=", .a)])
+if (length(.f)) setwd(normalizePath(file.path(dirname(.f[1]), "..")))
+dir.create("figures_R", showWarnings = FALSE)   # output directory, not tracked in git
+
 suppressPackageStartupMessages({library(tidyverse)})
 
 d <- read.delim("tables/fig1_input.tsv", check.names = FALSE) %>%

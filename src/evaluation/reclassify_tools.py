@@ -12,8 +12,8 @@ import os
 import pandas as pd
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-FILES = [os.path.join(ROOT, "results", "tables", "driver_miss_rate.tsv"),
-         os.path.join(ROOT, "paper_handoff", "tables", "driver_miss_rate.tsv")]
+from src.paths import table_out_dirs
+FILES = [os.path.join(d, "driver_miss_rate.tsv") for d in table_out_dirs()]
 
 # Scores derived without clinical labels → unsupervised/self-supervised (keyed by the short tool names in the file)
 UNSUP = {
@@ -68,7 +68,7 @@ def main():
     s = df[df.type2 == "supervised"]["miss_rate(<0.5)"].mean()
     print("\n=== R3 new numbers (replacing current 14.3/9.1) ===")
     print("  unsupervised %.1f%% vs supervised %.1f%% (diff %.1f%%p)" % (100 * u, 100 * s, 100 * (u - s)))
-    print("\n[done] type2 added -> driver_miss_rate.tsv (results/ + paper_handoff/)")
+    print("\n[done] type2 added -> driver_miss_rate.tsv")
 
 
 if __name__ == "__main__":

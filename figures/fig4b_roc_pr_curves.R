@@ -1,6 +1,14 @@
 # Fig 4b — ROC & PR curves: model (tool stack) vs AlphaMissense vs VARITY_R
 # Input: tables/oof_predictions.tsv  Output: fig4b_roc_pr_curves.{pdf,png}
 # Message: model (stack) ~0.92 > best single tool ~0.87. full vs tools-only nearly identical (mechanism/structure add nothing).
+# Resolve the repository root from this script's own location so the script runs
+# correctly whether invoked as `Rscript figures/<name>.R` from the repo root or as
+# `Rscript <name>.R` from inside figures/.
+.a <- commandArgs(trailingOnly = FALSE)
+.f <- sub("^--file=", "", .a[grep("^--file=", .a)])
+if (length(.f)) setwd(normalizePath(file.path(dirname(.f[1]), "..")))
+dir.create("figures_R", showWarnings = FALSE)   # output directory, not tracked in git
+
 suppressPackageStartupMessages({library(tidyverse)})
 
 d <- read.delim("tables/oof_predictions.tsv", check.names = FALSE)
@@ -58,9 +66,13 @@ pPR <- ggplot(pr, aes(recall, precision, color = predictor)) +
 
 # Combine the two panels — collect the legend at the bottom so the diagonal is not obscured
 if (requireNamespace("patchwork", quietly = TRUE)) {
+  # Set the shared legend position on each panel before combining. The `&` operator
+  # between a patchwork object and a theme is not dispatched in every
+  # patchwork/ggplot2 version combination, so avoid relying on it.
+  pROC <- pROC + theme(legend.position = "bottom")
+  pPR  <- pPR  + theme(legend.position = "bottom")
   p <- patchwork::wrap_plots(pROC, pPR, ncol = 2) +
-       patchwork::plot_layout(guides = "collect") &
-       theme(legend.position = "bottom")
+       patchwork::plot_layout(guides = "collect")
 } else { p <- pROC }
 ggsave("figures_R/fig4b_roc_pr_curves.pdf", p, width = 11, height = 6)
 ggsave("figures_R/fig4b_roc_pr_curves.png", p, width = 11, height = 6, dpi = 300)

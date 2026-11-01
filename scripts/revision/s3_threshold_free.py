@@ -1,7 +1,7 @@
 """S3 — unsupervised vs supervised: threshold-free re-validation + 17.8/14.3 reconciliation.
 (A) Explain 17.8 vs 14.3: recompute group means of driver_miss_rate.tsv by recurrence cut and classification (type vs type2).
 (B) threshold-free: compare per-tool oncogene AUROC and oncogene-TSG gap (GOF penalty) by group (Mann-Whitney + permutation).
-Usage: python paper_handoff/revision/s3_threshold_free.py
+Usage: python scripts/revision/s3_threshold_free.py
 """
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
@@ -10,10 +10,10 @@ from scipy.stats import mannwhitneyu
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 RNG = np.random.RandomState(999)
-TBL = os.path.join(ROOT, "paper_handoff", "tables")
+from src.paths import find_table, revision_out_dir
 
 # ---------- (A) 17.8 vs 14.3 reconciliation ----------
-mr = pd.read_csv(os.path.join(TBL, "driver_miss_rate.tsv"), sep="\t")
+mr = pd.read_csv(find_table("driver_miss_rate.tsv"), sep="\t")
 print("driver_miss_rate.tsv: %d tools, columns=%s" % (len(mr), list(mr.columns)))
 print("\n(A) group mean miss_rate(rankscore<0.5, rec>=50 driver n=%d):" % mr.n_drivers.max())
 for grpcol in ["type", "type2"]:
@@ -30,7 +30,7 @@ mwp = mannwhitneyu(u, s, alternative="greater").pvalue
 print("    Mann-Whitney(unsup>sup) p=%.4f" % mwp)
 
 # ---------- (B) threshold-free: oncogene AUROC + GOF gap ----------
-perf = pd.read_csv(os.path.join(TBL, "tool_performance.tsv"), sep="\t")
+perf = pd.read_csv(find_table("tool_performance.tsv"), sep="\t")
 og = perf[perf.group=="oncogene"].set_index("tool")["AUROC"].rename("onco_auroc")
 ts = perf[perf.group=="TSG"].set_index("tool")["AUROC"].rename("tsg_auroc")
 alla = perf[perf.group=="all"].set_index("tool")["AUROC"].rename("all_auroc")
@@ -67,8 +67,8 @@ for metric, greater, desc in [("gof_gap","greater","GOF penalty(TSG-onco AUROC),
     rows.append({"metric":metric,"unsup_mean":round(am,4),"sup_mean":round(bm,4),
                  "diff":round(obs,4),"mannwhitney_p":round(pmw,4),"perm_p":round(pperm,4)})
 
-pd.DataFrame(rows).to_csv(os.path.join(ROOT,"paper_handoff","revision","s3_threshold_free.tsv"),
+pd.DataFrame(rows).to_csv(os.path.join(revision_out_dir(),"s3_threshold_free.tsv"),
                           sep="\t", index=False)
 tf.reset_index().rename(columns={"index":"tool"}).to_csv(
-    os.path.join(ROOT,"paper_handoff","revision","s3_tool_thresholdfree.tsv"), sep="\t", index=False)
+    os.path.join(revision_out_dir(),"s3_tool_thresholdfree.tsv"), sep="\t", index=False)
 print("\n[saved] s3_threshold_free.tsv, s3_tool_thresholdfree.tsv")

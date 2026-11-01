@@ -32,3 +32,6 @@ env/
 .vscode/
 .env
 config/secrets.yaml
+
+# generated figure outputs
+figures_R/

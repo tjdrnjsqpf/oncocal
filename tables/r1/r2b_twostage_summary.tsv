@@ -1,0 +1,9 @@
+convention	quantity	point	ci_lo	ci_hi	excludes_zero	P_gt_0
+as_published_no_dedup	mean_gap_across_tools	0.0296	-0.0201	0.0743	no	0.8705
+as_published_no_dedup	n_tools_oncogene_worse	42.0	16.0	47.0		
+as_published_no_dedup	n_tools_with_own_CI_excluding_0_positive	10.0				
+as_published_no_dedup	n_tools_with_own_CI_excluding_0_negative	0.0				
+pkey_dedup	mean_gap_across_tools	0.026	-0.0246	0.0725	no	0.829
+pkey_dedup	n_tools_oncogene_worse	39.0	13.0	47.0		
+pkey_dedup	n_tools_with_own_CI_excluding_0_positive	5.0				
+pkey_dedup	n_tools_with_own_CI_excluding_0_negative	1.0				

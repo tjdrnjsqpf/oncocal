@@ -1,6 +1,14 @@
 # Fig 2D (candidate) — conservation × RSA 2D: two orthogonal axes jointly predict AM failures
 # Input: fig1_input.tsv (phyloP) + fig2_rsa_input.tsv (RSA), joined by pkey
 # Output: fig2d_conservation_rsa_2d.{pdf,png}
+# Resolve the repository root from this script's own location so the script runs
+# correctly whether invoked as `Rscript figures/<name>.R` from the repo root or as
+# `Rscript <name>.R` from inside figures/.
+.a <- commandArgs(trailingOnly = FALSE)
+.f <- sub("^--file=", "", .a[grep("^--file=", .a)])
+if (length(.f)) setwd(normalizePath(file.path(dirname(.f[1]), "..")))
+dir.create("figures_R", showWarnings = FALSE)   # output directory, not tracked in git
+
 suppressPackageStartupMessages({library(tidyverse)})
 
 a <- read.delim("tables/fig1_input.tsv", check.names = FALSE)[, c("pkey","AM_status","phyloP100way")]

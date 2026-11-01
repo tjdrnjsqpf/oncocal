@@ -8,7 +8,8 @@ import os
 import pandas as pd
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-PANEL = os.path.join(ROOT, "paper_handoff", "tables", "canonical_driver_panel.tsv")
+from src.paths import find_table
+PANEL = find_table("canonical_driver_panel.tsv")
 
 COLMAP = {
     "dbnsfp_AlphaMissense_rankscore": "AlphaMissense", "dbnsfp_REVEL_rankscore": "REVEL",
@@ -83,7 +84,7 @@ def main():
     for pk, role, n, hot, civ, src in sorted(why, key=lambda x: (x[1], -x[2])):
         sig = ",".join([s for s, b in [("hotspot", hot), ("CIViC", civ)] if b]) or "rec"
         print("  %-18s %-9s rec=%-6d [%s] (%s)" % (pk, role, n, sig, src))
-    print("\n[done] -> paper_handoff/tables/canonical_driver_panel.tsv")
+    print("\n[done] -> %s" % PANEL)
 
 
 if __name__ == "__main__":

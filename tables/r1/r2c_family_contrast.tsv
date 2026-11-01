@@ -1,0 +1,9 @@
+convention	quantity	point	ci_lo	ci_hi	P_gt_0	excludes_zero
+as_published_no_dedup	unsupervised_family_mean_gap	0.0395	-0.0074	0.0825	0.945	no
+as_published_no_dedup	supervised_family_mean_gap	0.0221	-0.0323	0.073	0.779	no
+as_published_no_dedup	family_contrast_unsup_minus_sup	0.0174	-0.0084	0.0449	0.902	no
+as_published_no_dedup	n_tools_oncogene_worse	42.0	16.0	47.0	0.879	P_gt_0 column = P(count >= 25)
+pkey_dedup	unsupervised_family_mean_gap	0.0345	-0.0129	0.0784	0.915	no
+pkey_dedup	supervised_family_mean_gap	0.0196	-0.036	0.0704	0.753	no
+pkey_dedup	family_contrast_unsup_minus_sup	0.0149	-0.0103	0.0422	0.866	no
+pkey_dedup	n_tools_oncogene_worse	39.0	13.0	47.0	0.8515	P_gt_0 column = P(count >= 25)

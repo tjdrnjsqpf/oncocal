@@ -4,7 +4,7 @@ Three methods: (1) gene-collapsed paired Wilcoxon (gene = unit)
         (2) GEE cluster-robust logistic (cluster = gene)
         (3) gene-cluster bootstrap 95% CI (rank-biserial r, median diff)
         (+) mixed-effects logistic (random intercept = gene) as auxiliary
-Usage: python paper_handoff/revision/s2_clustered.py
+Usage: python scripts/revision/s2_clustered.py
 """
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
@@ -13,6 +13,7 @@ from scipy.stats import wilcoxon, mannwhitneyu
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from src.features.structure_features import add_structure_features
+from src.paths import revision_out_dir
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 RNG = np.random.RandomState(12345)  # fixed seed instead of Math.random
@@ -98,5 +99,5 @@ for name, col in AXES:
                       "boot_mdiff_lo": round(mlo,3), "boot_mdiff_hi": round(mhi,3)})
 
 pd.DataFrame(out_lines).to_csv(
-    os.path.join(ROOT, "paper_handoff", "revision", "s2_clustered_stats.tsv"), sep="\t", index=False)
+    os.path.join(revision_out_dir(), "s2_clustered_stats.tsv"), sep="\t", index=False)
 print("\n[saved] s2_clustered_stats.tsv")

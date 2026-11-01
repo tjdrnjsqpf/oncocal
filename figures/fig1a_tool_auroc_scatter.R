@@ -1,6 +1,14 @@
 # Fig 1a — Per-tool AUROC: oncogene (GOF) vs TSG (LOF)
 # Input: tables/tool_performance.tsv   Output: fig1a_tool_auroc_scatter.{pdf,png}
 # Message: 42 of 49 tools fall below the diagonal (GOF AUROC < TSG AUROC).
+# Resolve the repository root from this script's own location so the script runs
+# correctly whether invoked as `Rscript figures/<name>.R` from the repo root or as
+# `Rscript <name>.R` from inside figures/.
+.a <- commandArgs(trailingOnly = FALSE)
+.f <- sub("^--file=", "", .a[grep("^--file=", .a)])
+if (length(.f)) setwd(normalizePath(file.path(dirname(.f[1]), "..")))
+dir.create("figures_R", showWarnings = FALSE)   # output directory, not tracked in git
+
 suppressPackageStartupMessages({library(tidyverse)})
 
 tp <- read.delim("tables/tool_performance.tsv", check.names = FALSE)

@@ -1,6 +1,14 @@
 # Fig 5 — External validation on independent DMS (ProteinGym v1.3)
 # Input: tables/external_validation_dms.tsv  Output: fig6_dms_spearman.{pdf,png}
 # Message: model |Spearman| 0.492 ~= AlphaMissense 0.502 > REVEL 0.426; direction correct (generalises).
+# Resolve the repository root from this script's own location so the script runs
+# correctly whether invoked as `Rscript figures/<name>.R` from the repo root or as
+# `Rscript <name>.R` from inside figures/.
+.a <- commandArgs(trailingOnly = FALSE)
+.f <- sub("^--file=", "", .a[grep("^--file=", .a)])
+if (length(.f)) setwd(normalizePath(file.path(dirname(.f[1]), "..")))
+dir.create("figures_R", showWarnings = FALSE)   # output directory, not tracked in git
+
 suppressPackageStartupMessages({library(tidyverse)})
 
 # ProteinGym assay ID -> clean label "GENE (Author Year)"

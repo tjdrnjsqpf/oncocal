@@ -1,6 +1,6 @@
 """S1 — Reconciliation diagnostic for AM-missed N.
 Directly reproduce, from the dataset, the definitions behind the two manuscript figures (472/2415 vs 1091/3077, total 4168).
-Usage: python paper_handoff/revision/s1_diagnose.py
+Usage: python scripts/revision/s1_diagnose.py
 """
 import os
 import numpy as np
