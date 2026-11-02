@@ -5,7 +5,8 @@ Tests: medians, Mann-Whitney, gene-clustered GEE (cluster = gene)."""
 import os, numpy as np, pandas as pd
 from scipy.stats import mannwhitneyu
 import statsmodels.api as sm, statsmodels.formula.api as smf
-M = os.path.expanduser("~/oncocal/scripts/revision/fig2_master_3922.tsv")
+M = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 "..", "revision", "fig2_master_3922.tsv"))
 d = pd.read_csv(M, sep="\t")
 rows = []
 for set_nm, sub in [("all", d), ("core_roles", d[d.role_class.isin(["oncogene", "TSG", "both"])])]:

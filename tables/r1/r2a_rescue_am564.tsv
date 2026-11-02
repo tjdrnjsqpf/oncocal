@@ -1,0 +1,4 @@
+am_cut	model	model_cut	n_missed	gained	lost	net	rescue_pct	model_sens	am_sens	am_spec	n_pos	sens_diff_x_npos
+0.564	p_model_tools	0.2373	811	314	93	221	38.7	0.8308	0.7674	0.9122	3487	221.0
+0.564	p_model_mech	0.2271	811	355	99	256	43.8	0.8408	0.7674	0.9122	3487	256.0
+0.564	p_model_full	0.2288	811	336	86	250	41.4	0.8391	0.7674	0.9122	3487	250.0

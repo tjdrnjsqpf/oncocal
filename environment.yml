@@ -1,27 +1,30 @@
+# Versions are those of the environment that produced the released results
+# (analysis server, conda env `mutfunc`). environment-lock.txt holds the full
+# resolved environment including transitive dependencies and build strings.
 name: mutfunc
 channels:
   - conda-forge
   - bioconda
 dependencies:
-  - python=3.11
+  - python=3.11.15
   - pip
-  - numpy
-  - pandas
-  - scipy
-  - scikit-learn
-  - xgboost
-  - lightgbm
-  - matplotlib
-  - seaborn
-  - statsmodels
-  - jupyterlab
-  - pyarrow            # parquet
-  - tqdm
-  - pyyaml
-  - requests
+  - numpy=2.4.6
+  - pandas=3.0.3
+  - scipy=1.17.1
+  - scikit-learn=1.9.0
+  - xgboost=3.2.0
+  - lightgbm=4.6.0
+  - matplotlib=3.10.9
+  - seaborn=0.13.2
+  - statsmodels=0.14.6
+  - jupyterlab=4.5.8
+  - pyarrow=24.0.0            # parquet
+  - tqdm=4.68.2
+  - pyyaml=6.0.3
+  - requests=2.34.2
   # Bioinformatics utilities
-  - pysam              # VCF/BAM
-  - bioconda::pybigwig
+  - pysam=0.24.0              # VCF/BAM
+  - bioconda::pybigwig=0.3.25
   - pip:
-      - shap           # Model interpretation
-      - myvariant      # variant annotation API
+      - shap==0.51.0          # Model interpretation
+      - myvariant              # variant annotation API
